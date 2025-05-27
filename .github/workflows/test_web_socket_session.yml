@@ -3,8 +3,22 @@ name: Run WebSocketSession Test
 on:
   pull_request:
     branches: [ master ]
+    paths:
+      - 'src/net/web_socket_session.hpp'
+      - 'tests/test_web_socket_session.cpp'
+      - 'src/net/CMakeLists.txt'
+      - 'tests/CMakeLists.txt'
+      - 'CMakeLists.txt'
+      - 'test_web_socket_session.yml'
   push:
     branches: [ master ]
+    paths:
+      - 'src/net/web_socket_session.hpp'
+      - 'tests/test_web_socket_session.cpp'
+      - 'src/net/CMakeLists.txt'
+      - 'tests/CMakeLists.txt'
+      - 'CMakeLists.txt'
+      - 'test_web_socket_session.yml'
 
 jobs:
   test:
@@ -13,15 +27,36 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install dependencies
+    - name: Cache CMake dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          build/_deps
+        key: cmake-deps-${{ runner.os }}-${{ hashFiles('CMakeLists.txt') }}
+        restore-keys: |
+          cmake-deps-${{ runner.os }}-
+    
+    - name: Cache websocat
+      id: cache-websocat
+      uses: actions/cache@v4
+      with:
+        path: /usr/local/bin/websocat
+        key: websocat-v1.14.0
+    
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake build-essential libssl-dev
         
-        # Install websocat
+    - name: Install websocat
+      if: steps.cache-websocat.outputs.cache-hit != 'true'
+      run: |
         curl -L -o websocat https://github.com/vi/websocat/releases/download/v1.14.0/websocat.x86_64-unknown-linux-musl
         chmod +x websocat
         sudo mv websocat /usr/local/bin
+        
+    - name: Verify websocat
+      run: websocat --version
 
     - name: Generate test certificates
       run: |
