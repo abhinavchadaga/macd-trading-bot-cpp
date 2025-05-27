@@ -16,7 +16,6 @@ target_link_libraries(unit_tests
         OpenSSL::SSL
         OpenSSL::Crypto
         nlohmann_json::nlohmann_json
-        project_warnings
 )
 
 # Include directories for headers
