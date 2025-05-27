@@ -2,21 +2,20 @@
 
 std::shared_ptr<web_socket_session>
 web_socket_session::create (net::io_context &ioc,
-        const web_socket_session_config &config,
-        frame_handler on_frame)
+                            const web_socket_session_config &config,
+                            frame_handler on_frame)
 {
   auto session = std::make_shared<web_socket_session> (ioc, config);
   session->_frame_handler = std::move (on_frame);
   return session;
 }
 
-web_socket_session::web_socket_session (net::io_context &ioc, web_socket_session_config cfg)
-  : _config{ std::move (cfg) },
-    _resolver{ net::make_strand (ioc) }
-    , _ws{ net::make_strand (ioc), _config.ssl_ctxt }
-    , _ping_timer{ net::make_strand (ioc) }
-    , _connected{ false }
-    , _should_reconnect{ true }
+web_socket_session::web_socket_session (net::io_context &ioc,
+                                        web_socket_session_config cfg)
+    : _config{ std::move (cfg) }, _resolver{ net::make_strand (ioc) },
+      _ws{ net::make_strand (ioc), _config.ssl_ctxt },
+      _ping_timer{ net::make_strand (ioc) }, _connected{ false },
+      _should_reconnect{ true }
 {
 }
 
@@ -38,15 +37,14 @@ web_socket_session::stop ()
 
   if (_ws.is_open ())
     {
-      _ws.async_close (websocket::close_code::normal,
-                       [self = shared_from_this (), this](
-                       const beast::error_code &ec)
-                       {
-                         if (ec)
-                           {
-                             fail (ec, "close");
-                           }
-                       });
+      _ws.async_close (
+          websocket::close_code::normal,
+          [self = shared_from_this (), this] (const beast::error_code &ec) {
+            if (ec)
+              {
+                fail (ec, "close");
+              }
+          });
     }
 }
 
@@ -74,20 +72,17 @@ web_socket_session::fail (const beast::error_code &ec, char const *what)
 void
 web_socket_session::resolve ()
 {
-  _resolver.async_resolve (
-      _config.host,
-      _config.port,
-      [self = shared_from_this ()](const beast::error_code &ec,
-                                   const tcp::resolver::results_type &
-                                   results)
-      {
-        self->on_resolve (ec, results);
-      });
+  _resolver.async_resolve (_config.host, _config.port,
+                           [self = shared_from_this ()] (
+                               const beast::error_code &ec,
+                               const tcp::resolver::results_type &results) {
+                             self->on_resolve (ec, results);
+                           });
 }
 
 void
 web_socket_session::on_resolve (const beast::error_code &ec,
-            const tcp::resolver::results_type &results)
+                                const tcp::resolver::results_type &results)
 {
   if (ec)
     {
@@ -96,19 +91,17 @@ web_socket_session::on_resolve (const beast::error_code &ec,
 
   beast::get_lowest_layer (_ws).expires_after (std::chrono::seconds (30));
   beast::get_lowest_layer (_ws).async_connect (
-      results,
-      [self = shared_from_this ()](const beast::error_code &ec,
-                                   const
-                                   tcp::resolver::results_type::endpoint_type
-                                   &ep)
-      {
+      results, [self = shared_from_this ()] (
+                   const beast::error_code &ec,
+                   const tcp::resolver::results_type::endpoint_type &ep) {
         self->on_connect (ec, ep);
       });
 }
 
 void
-web_socket_session::on_connect (beast::error_code error_code,
-            const tcp::resolver::results_type::endpoint_type &endpoint_type)
+web_socket_session::on_connect (
+    beast::error_code error_code,
+    const tcp::resolver::results_type::endpoint_type &endpoint_type)
 {
   if (error_code)
     {
@@ -129,8 +122,7 @@ web_socket_session::on_connect (beast::error_code error_code,
 
   _ws.next_layer ().async_handshake (
       ssl::stream_base::client,
-      [self = shared_from_this ()](const beast::error_code &ec)
-      {
+      [self = shared_from_this ()] (const beast::error_code &ec) {
         self->on_ssl_handshake (ec);
       });
 }
@@ -146,20 +138,18 @@ web_socket_session::on_ssl_handshake (const beast::error_code &error_code)
   beast::get_lowest_layer (_ws).expires_never ();
   _ws.set_option (
       websocket::stream_base::timeout::suggested (beast::role_type::client));
-  _ws.set_option (websocket::stream_base::decorator (
-      [](websocket::request_type &req)
-      {
+  _ws.set_option (
+      websocket::stream_base::decorator ([] (websocket::request_type &req) {
         req.set (http::field::user_agent,
-                 std::string (BOOST_BEAST_VERSION_STRING) +
-                 " macd-trading-bot");
+                 std::string (BOOST_BEAST_VERSION_STRING)
+                     + " macd-trading-bot");
       }));
 
-  _ws.async_handshake (_host_port, _config.endpoint,
-                       [self = shared_from_this ()](
-                       const beast::error_code &ec)
-                       {
-                         self->on_handshake (ec);
-                       });
+  _ws.async_handshake (
+      _host_port, _config.endpoint,
+      [self = shared_from_this ()] (const beast::error_code &ec) {
+        self->on_handshake (ec);
+      });
 }
 
 void
@@ -194,17 +184,16 @@ web_socket_session::on_handshake (const beast::error_code &ec)
 void
 web_socket_session::do_read ()
 {
-  _ws.async_read (
-      _buffer,
-      [self = shared_from_this ()](const beast::error_code &ec,
-                                   const std::size_t bytes_transferred)
-      {
-        self->on_read (ec, bytes_transferred);
-      });
+  _ws.async_read (_buffer, [self = shared_from_this ()] (
+                               const beast::error_code &ec,
+                               const std::size_t bytes_transferred) {
+    self->on_read (ec, bytes_transferred);
+  });
 }
 
 void
-web_socket_session::on_read (const beast::error_code &ec, std::size_t bytes_transferred)
+web_socket_session::on_read (const beast::error_code &ec,
+                             std::size_t bytes_transferred)
 {
   boost::ignore_unused (bytes_transferred);
 
@@ -232,15 +221,15 @@ web_socket_session::do_write ()
 
   _ws.async_write (
       net::buffer (_write_queue.front ()),
-      [self = shared_from_this ()](const beast::error_code &ec,
-                                   std::size_t bytes_transferred)
-      {
+      [self = shared_from_this ()] (const beast::error_code &ec,
+                                    std::size_t bytes_transferred) {
         self->on_write (ec, bytes_transferred);
       });
 }
 
 void
-web_socket_session::on_write (const beast::error_code &ec, std::size_t bytes_transferred)
+web_socket_session::on_write (const beast::error_code &ec,
+                              std::size_t bytes_transferred)
 {
   boost::ignore_unused (bytes_transferred);
 
@@ -261,8 +250,7 @@ web_socket_session::arm_heartbeat ()
 {
   _ping_timer.expires_after (std::chrono::seconds (30));
   _ping_timer.async_wait (
-      [self = shared_from_this ()](const beast::error_code &ec)
-      {
+      [self = shared_from_this ()] (const beast::error_code &ec) {
         self->on_ping_timer (ec);
       });
 }
@@ -274,8 +262,7 @@ web_socket_session::on_ping_timer (const beast::error_code &ec)
     return;
 
   _ws.async_ping ({},
-                  [self = shared_from_this ()](const beast::error_code &ec)
-                  {
+                  [self = shared_from_this ()] (const beast::error_code &ec) {
                     if (ec)
                       {
                         self->fail (ec, "ping");
