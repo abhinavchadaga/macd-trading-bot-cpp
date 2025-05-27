@@ -12,11 +12,13 @@ target_link_libraries(unit_tests
         OpenSSL::SSL
         OpenSSL::Crypto
         nlohmann_json::nlohmann_json
+        easyloggingpp
 )
 
 target_include_directories(unit_tests
         PRIVATE
         ${CMAKE_SOURCE_DIR}/include
+        ${easyloggingpp_SOURCE_DIR}/src
 )
 
 include(GoogleTest)

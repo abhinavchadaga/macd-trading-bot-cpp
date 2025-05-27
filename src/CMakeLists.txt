@@ -22,6 +22,7 @@ add_library(alpaca_market_feed AlpacaWSMarketFeed.cpp)
 
 target_include_directories(alpaca_market_feed PUBLIC
     ${CMAKE_SOURCE_DIR}/include
+    ${easyloggingpp_SOURCE_DIR}/src
 )
 
 target_link_libraries(alpaca_market_feed PUBLIC
@@ -31,4 +32,5 @@ target_link_libraries(alpaca_market_feed PUBLIC
     nlohmann_json::nlohmann_json
     OpenSSL::SSL
     OpenSSL::Crypto
+    easyloggingpp
 )

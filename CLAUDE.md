@@ -50,8 +50,7 @@ trading clients).
 
 ## File Structure
 
-- `src/examples/`: Demo applications (WebSocket server example)
-- `src/net/`: Network components (WebSocketSession)
+- `src/': impleme
 - `tests/`: Test directory (currently empty)
 
 ## Testing

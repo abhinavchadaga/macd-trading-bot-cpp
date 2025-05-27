@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "AlpacaWSMarketFeed.hpp"
+#include "logging_utils.hpp"
 #include <boost/asio.hpp>
 #include <chrono>
 #include <thread>
@@ -11,6 +12,7 @@ protected:
   void SetUp() override
   {
     _ioc = std::make_unique<asio::io_context>();
+    CLASS_LOGGER(AlpacaWSMarketFeedTest);
   }
 
   void TearDown() override
@@ -29,9 +31,9 @@ TEST_F(AlpacaWSMarketFeedTest, ConnectsToFAKEPACAStream)
 
   const char* api_key = std::getenv("ALPACA_API_KEY");
   const char* api_secret = std::getenv("ALPACA_API_SECRET");
-  
+
   if (!api_key || !api_secret) {
-    GTEST_SKIP() << "Set ALPACA_API_KEY and ALPACA_API_SECRET environment variables to run this test";
+    GTEST_FAIL() << "Set ALPACA_API_KEY and ALPACA_API_SECRET environment variables to run this test";
   }
 
   AlpacaWSMarketFeed::config config{
@@ -47,12 +49,12 @@ TEST_F(AlpacaWSMarketFeedTest, ConnectsToFAKEPACAStream)
       latest_bar = b;
       received_bar = true;
       ++bar_count;
-      std::cout << "Received bar for " << b.symbol() 
+      LOG_INFO(AlpacaWSMarketFeedTest, ConnectsToFAKEPACAStream) << "Received bar for " << b.symbol() 
                 << " - O: " << b.open() 
                 << " H: " << b.high()
                 << " L: " << b.low() 
                 << " C: " << b.close()
-                << " V: " << b.volume() << std::endl;
+                << " V: " << b.volume();
     }
   );
 
@@ -64,7 +66,7 @@ TEST_F(AlpacaWSMarketFeedTest, ConnectsToFAKEPACAStream)
   });
 
   const auto start_time = std::chrono::steady_clock::now();
-  const auto timeout = std::chrono::seconds(30);
+  constexpr auto timeout = std::chrono::seconds(60);
 
   while (!received_bar && 
          (std::chrono::steady_clock::now() - start_time) < timeout)
