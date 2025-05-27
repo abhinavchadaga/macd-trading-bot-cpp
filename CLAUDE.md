@@ -4,8 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A C++20 MACD trading bot that uses the Alpaca Trading API to automatically trade based on technical indicators. The bot
-follows a single-threaded, event-driven Reactor pattern inspired by Virtu Financial's architecture.
+A C++20 MACD trading bot that uses the Alpaca Trading API to automatically trade based on technical indicators. The bot follows a single-threaded, event-driven Reactor pattern inspired by Virtu Financial's architecture.
 
 ### Trading Strategy
 
@@ -15,59 +14,95 @@ follows a single-threaded, event-driven Reactor pattern inspired by Virtu Financ
 
 ## Build System
 
-This project uses CMake with FetchContent to manage dependencies:
+This project uses CMake with FetchContent to manage dependencies. The build directory is `cmake-build-debug` (CLion convention).
 
 ```bash
-# Configure and build
-mkdir build && cd build
-cmake ..
-make
+# Configure and build (from project root)
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S . -B cmake-build-debug
+cmake --build cmake-build-debug
 
-# Run from build directory
-./src/main                    # Main trading bot
-./src/examples/daytime_server # Example WebSocket server
+# Run tests
+cmake --build cmake-build-debug --target unit_tests
+./cmake-build-debug/tests/unit_tests
+
+# Run specific test
+./cmake-build-debug/tests/unit_tests --gtest_filter="WebSocketSessionTest.*"
 ```
 
 ## Dependencies
 
+All dependencies are automatically fetched via CMake FetchContent:
 - **Boost** (asio, beast, system): Networking and WebSocket support
-- **nlohmann/json**: JSON parsing for API responses
+- **nlohmann/json**: JSON parsing for API responses  
+- **GoogleTest**: Testing framework
+- **OpenSSL**: Required for SSL/TLS connections
 - **C++20**: Modern C++ features required
-
-All dependencies are automatically fetched via CMake FetchContent.
 
 ## Architecture
 
 The bot operates as a single-threaded event loop processing:
 
 1. Real-time market data via WebSocket (1-minute candles → 5-minute aggregation)
-2. Technical indicator calculations (MACD, EMA_200, ATR)
+2. Technical indicator calculations (MACD, EMA_200, ATR)  
 3. Strategy decisions (BUY/SELL/NO_ACTION)
 4. Order execution and position tracking via Alpaca API
 
-Key design principle: Components should be mockable for backtesting (Live vs Historical data streams, Live vs Mock
-trading clients).
+### Key Components
 
-## File Structure
+- **web_socket_session**: SSL WebSocket client with automatic reconnection, heartbeat, and error handling
+- **WebSocketSessionTest**: Automated test that spawns websocat echo server for integration testing
 
-- `src/examples/`: Demo applications (WebSocket server example)
-- `src/net/`: Network components (WebSocketSession)
-- `tests/`: Test directory (currently empty)
+Key design principle: Components should be mockable for backtesting (Live vs Historical data streams, Live vs Mock trading clients).
 
 ## Testing
 
-Tests are built as a separate target:
+WebSocket tests are fully automated - no manual setup required:
 
 ```bash
-# From build directory
-make tests  # Build tests (excluded from default build)
-# No test runner specified yet - check project status
+# All tests
+cmake --build cmake-build-debug --target unit_tests && ./cmake-build-debug/tests/unit_tests
+
+# WebSocket tests specifically  
+./cmake-build-debug/tests/unit_tests --gtest_filter="WebSocketSessionTest.*"
 ```
 
-## Coding Standards:
+The WebSocket test automatically:
+1. Downloads and installs websocat if needed
+2. Generates SSL certificates
+3. Starts SSL WebSocket echo server on port 9001
+4. Runs connection and echo tests
+5. Cleans up server on completion
+
+## Development Tools
+
+### Pre-commit Hooks
+
+Pre-commit hooks are configured with clang-format (GNU style), clang-tidy, and Conventional Commits enforcement:
+
+```bash
+# Setup (run once)
+./setup-hooks.sh
+
+# Manual run
+pre-commit run --all-files
+```
+
+### Code Quality
+
+- **Formatting**: Uses clang-format with GNU style (matches `.clang-format`)
+- **Linting**: clang-tidy with compilation database (`.clang-tidy`)
+- **Commit Messages**: Must follow Conventional Commits format (type(scope): description)
+
+Examples:
+- `feat: add MACD trading strategy`
+- `fix(websocket): handle connection timeouts`
+- `test: add WebSocket echo integration test`
+
+## Coding Standards
 
 1. Use Object Oriented C++20
-2. Format your code using clang-format's GNU preset
-3. Use "_" as a prefix for instance variables
+2. Format code using clang-format's GNU preset  
+3. Use "_" as prefix for instance variables
 4. Use default initialization for instance members whenever possible
 5. Prefer braced initialization over parentheses
+6. Never leave inline comments - code should be self-documenting through descriptive function and variable names

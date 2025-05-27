@@ -1,0 +1,43 @@
+repos:
+  # Conventional Commits enforcement
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [optional-scope]
+
+  # C++ formatting and linting
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v19.1.6
+    hooks:
+      - id: clang-format
+        files: \.(c|cc|cxx|cpp|frag|glsl|h|hpp|hxx|ih|ispc|ipp|java|js|m|proto|vert)$
+        args: [--style=GNU]
+
+  # General hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+
+  # C++ specific linting with clang-tidy
+  - repo: local
+    hooks:
+      - id: clang-tidy
+        name: clang-tidy
+        entry: bash
+        language: system
+        files: \.(c|cc|cxx|cpp|h|hpp|hxx)$
+        args:
+          - -c
+          - 'if [ -f cmake-build-debug/compile_commands.json ]; then clang-tidy --config-file=.clang-tidy -p cmake-build-debug "$@"; else echo "Warning: No compilation database found, skipping clang-tidy"; fi'
+          - --
+        require_serial: false
