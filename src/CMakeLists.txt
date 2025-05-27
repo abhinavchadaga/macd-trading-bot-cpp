@@ -1,9 +1,9 @@
-add_library(web_socket_session 
+add_library(web_socket_session
     web_socket_session.cpp
 )
 
 target_include_directories(web_socket_session
-    PUBLIC 
+    PUBLIC
     ${CMAKE_SOURCE_DIR}/include
 )
 
