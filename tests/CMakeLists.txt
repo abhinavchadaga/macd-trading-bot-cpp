@@ -21,7 +21,7 @@ target_link_libraries(unit_tests
 # Include directories for headers
 target_include_directories(unit_tests
         PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/include
 )
 
 # Add test discovery

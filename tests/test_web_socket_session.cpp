@@ -1,4 +1,4 @@
-#include "net/web_socket_session.hpp"
+#include "web_socket_session.hpp"
 #include <boost/asio.hpp>
 #include <gtest/gtest.h>
 #include <future>
