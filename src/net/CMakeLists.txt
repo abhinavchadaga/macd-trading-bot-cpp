@@ -1,12 +1,14 @@
-add_library(web_socket_session INTERFACE)
+add_library(web_socket_session 
+    web_socket_session.cpp
+)
 
 target_include_directories(web_socket_session
-    INTERFACE 
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC 
+    ${CMAKE_SOURCE_DIR}/include
 )
 
 target_link_libraries(web_socket_session
-    INTERFACE
+    PUBLIC
     Boost::asio
     Boost::beast
     Boost::system
@@ -14,4 +16,4 @@ target_link_libraries(web_socket_session
     OpenSSL::Crypto
 )
 
-target_compile_features(web_socket_session INTERFACE cxx_std_20)
+target_compile_features(web_socket_session PUBLIC cxx_std_20)
