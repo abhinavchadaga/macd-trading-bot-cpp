@@ -9,6 +9,5 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(nlohmann_json REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 
-add_subdirectory(src)
 enable_testing()
 add_subdirectory(tests EXCLUDE_FROM_ALL)

@@ -4,7 +4,6 @@ add_executable(unit_tests
 
 target_link_libraries(unit_tests
         PRIVATE
-        web_socket_session
         GTest::gtest_main
         Boost::system
         OpenSSL::SSL
