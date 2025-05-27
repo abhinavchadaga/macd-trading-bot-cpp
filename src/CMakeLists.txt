@@ -14,6 +14,7 @@ target_link_libraries(web_socket_session
     Boost::system
     OpenSSL::SSL
     OpenSSL::Crypto
+    project_warnings
 )
 
 target_compile_features(web_socket_session PUBLIC cxx_std_20)
