@@ -21,6 +21,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Install OpenSSL
+    - run: sudo apt-get update && sudo apt-get install -y libssl-dev
+
     # ---------- cache Boost / json downloads ----------
     - name: Cache FetchContent deps
       uses: actions/cache@v4
@@ -42,5 +45,5 @@ jobs:
       run: cmake --build build --config Release --parallel 2
 
     # ---------- smoke-test ----------
-    - name: Run the executable
+    - name: Run smoke-test
       run: ./build/src/main
