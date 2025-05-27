@@ -6,6 +6,48 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Modern CMake way to set compile options
+add_compile_options(
+    # Core warnings (universal)
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Werror
+
+    # Universal warnings
+    -Wcast-align
+    -Wcast-qual
+    -Wconversion
+    -Wdouble-promotion
+    -Wformat=2
+    -Wmisleading-indentation
+    -Wnon-virtual-dtor
+    -Wold-style-cast
+    -Woverloaded-virtual
+    -Wredundant-decls
+    -Wshadow
+    -Wsign-conversion
+    -Wunused
+
+    # C++ specific warnings
+    $<$<COMPILE_LANGUAGE:CXX>:-Wctor-dtor-privacy>
+    $<$<COMPILE_LANGUAGE:CXX>:-Weffc++>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wnoexcept>
+)
+
+# GCC-specific warnings
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(
+        -Wduplicated-branches
+        -Wduplicated-cond
+        -Wlogical-op
+        -Wnull-dereference
+        -Wrestrict
+        -Wuseless-cast
+        $<$<COMPILE_LANGUAGE:CXX>:-Wstrict-null-sentinel>
+    )
+endif()
+
 
 # ---------- OpenSSL --------------
 find_package(OpenSSL REQUIRED)
