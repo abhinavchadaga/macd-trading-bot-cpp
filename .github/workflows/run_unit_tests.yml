@@ -1,0 +1,54 @@
+name: Run Unit Tests
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'tests/**'
+      - 'CMakeLists.txt'
+      - 'run_unit_tests.yml'
+  push:
+    branches: [ master ]
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'tests/**'
+      - 'CMakeLists.txt'
+      - 'run_unit_tests.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Cache CMake dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          build/_deps
+        key: cmake-deps-${{ runner.os }}-${{ hashFiles('CMakeLists.txt') }}
+        restore-keys: |
+          cmake-deps-${{ runner.os }}-
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential libssl-dev
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+    - name: Build project
+      run: cmake --build build
+
+    - name: Build tests
+      run: cmake --build build --target unit_tests
+
+    - name: Run all unit tests
+      run: |
+        cd build
+        ./tests/unit_tests

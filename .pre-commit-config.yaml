@@ -12,8 +12,8 @@ repos:
     rev: v19.1.6
     hooks:
       - id: clang-format
-        files: \.(c|cc|cxx|cpp|frag|glsl|h|hpp|hxx|ih|ispc|ipp|java|js|m|proto|vert)$
-        args: [--style=GNU]
+        files: \.(c|cc|cxx|cpp|h|hpp|hxx)$
+        args: [--style=GNU, --fallback-style=GNU]
 
   # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks

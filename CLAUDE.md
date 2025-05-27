@@ -77,21 +77,30 @@ The WebSocket test automatically:
 
 ### Pre-commit Hooks
 
-Pre-commit hooks are configured with clang-format (GNU style), clang-tidy, and Conventional Commits enforcement:
+Local pre-commit hooks enforce code quality with clang-format (GNU style), clang-tidy, and Conventional Commits:
 
 ```bash
 # Setup (run once)
 ./setup-hooks.sh
 
-# Manual run
+# Easy commit with auto-fixes
+./git-commit-with-hooks.sh "feat: your commit message"
+
+# Manual hook run
 pre-commit run --all-files
+
+# Traditional git workflow (hooks auto-fix formatting)
+git add .
+git commit -m "your message"
+# If hooks make changes, re-run:
+git add . && git commit --amend --no-edit
 ```
 
 ### Code Quality
 
-- **Formatting**: Uses clang-format with GNU style (matches `.clang-format`)
-- **Linting**: clang-tidy with compilation database (`.clang-tidy`)
-- **Commit Messages**: Must follow Conventional Commits format (type(scope): description)
+- **Formatting**: Uses clang-format with GNU style (auto-fixed by hooks)
+- **Linting**: clang-tidy with CLion defaults (validates during commit)
+- **Commit Messages**: Conventional Commits format enforced locally
 
 Examples:
 - `feat: add MACD trading strategy`
