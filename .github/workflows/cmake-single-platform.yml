@@ -1,0 +1,42 @@
+name: build-and-run
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  linux-build:
+    runs-on: ubuntu-22.04
+
+    env:
+      FC_DIR: ${{ github.workspace }}/fcdeps
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # ---------- cache Boost / json downloads ----------
+    - name: Cache FetchContent deps
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.FC_DIR }}
+        key: ${{ runner.os }}-fcdeps-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-fcdeps-
+
+    # ---------- configure ----------
+    - name: Configure (CMake + FetchContent)
+      run: |
+        cmake -S . -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DFETCHCONTENT_BASE_DIR=${{ env.FC_DIR }}
+
+    # ---------- build ----------
+    - name: Build
+      run: cmake --build build --config Release --parallel 2
+
+    # ---------- smoke-test ----------
+    - name: Run the executable
+      run: ./build/src/main
