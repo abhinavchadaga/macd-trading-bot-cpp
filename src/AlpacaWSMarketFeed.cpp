@@ -209,7 +209,7 @@ AlpacaWSMarketFeed::parse_bar_message (const nlohmann::json &message)
       auto timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds> (
           time_point);
 
-      bar new_bar{ symbol, open, high, low, close, volume, timestamp };
+      Bar new_bar{ symbol, open, high, low, close, volume, timestamp };
 
       _bar_signal (new_bar);
     }

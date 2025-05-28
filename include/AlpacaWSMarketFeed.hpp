@@ -14,7 +14,7 @@ namespace ssl = asio::ssl;
 class AlpacaWSMarketFeed
 {
 public:
-  using bar_signal_t = boost::signals2::signal<void (const bar &)>;
+  using bar_signal_t = boost::signals2::signal<void (const Bar &)>;
 
   struct config
   {
