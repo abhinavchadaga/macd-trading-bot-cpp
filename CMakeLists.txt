@@ -12,21 +12,8 @@ find_package(OpenSSL REQUIRED)
 
 include(FetchContent)
 
-# ---------- Boost via FetchContent ----------
-set(BOOST_ENABLE_CMAKE ON CACHE BOOL "" FORCE)
-set(BOOST_INCLUDE_LIBRARIES "asio;beast;system" CACHE STRING "" FORCE)
-set(FETCHCONTENT_QUIET OFF)
-set(BUILD_SHARED_LIBS OFF)
-set(BOOST_GIT_SHALLOW ON)
-
-
-# include BOOST
-FetchContent_Declare(
-        boost
-        GIT_REPOSITORY https://github.com/boostorg/boost.git
-        GIT_TAG boost-1.88.0
-)
-FetchContent_MakeAvailable(boost)
+# ---------- Boost via find_package ----------
+find_package(Boost REQUIRED COMPONENTS system)
 
 # include nlohmann json
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
