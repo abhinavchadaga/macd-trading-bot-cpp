@@ -6,14 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
-
-include(FetchContent)
-
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
-FetchContent_MakeAvailable(json)
-
-FetchContent_Declare(googletest URL https://github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz)
-FetchContent_MakeAvailable(googletest)
+find_package(nlohmann_json REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 
 add_subdirectory(src)
 enable_testing()
