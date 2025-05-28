@@ -13,6 +13,7 @@ repos:
     hooks:
       - id: clang-format
         files: \.(c|cc|cxx|cpp|h|hpp|hxx)$
+        exclude: ^third-party/
         args: [--style=GNU, --fallback-style=GNU]
 
   # General hooks
@@ -36,6 +37,7 @@ repos:
         entry: bash
         language: system
         files: \.(c|cc|cxx|cpp|h|hpp|hxx)$
+        exclude: ^third-party/
         args:
           - -c
           - 'if [ -f cmake-build-debug/compile_commands.json ]; then clang-tidy --config-file=.clang-tidy -p cmake-build-debug "$@"; else echo "Warning: No compilation database found, skipping clang-tidy"; fi'

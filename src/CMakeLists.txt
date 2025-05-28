@@ -1,17 +1,26 @@
-add_library(web_socket_session
-    web_socket_session.cpp
+add_library(LoggingUtils LoggingUtils.cpp)
+target_include_directories(LoggingUtils PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(LoggingUtils easylogging)
+
+add_library(WebSocketSession WebSocketSession.cpp)
+target_include_directories(WebSocketSession
+        PUBLIC
+        ${CMAKE_SOURCE_DIR}/include
+)
+target_link_libraries(WebSocketSession
+        PUBLIC
+        Boost::system
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        LoggingUtils
 )
 
-target_include_directories(web_socket_session
-    PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
+add_library(AlpacaMarketFeed AlpacaWSMarketFeed.cpp)
+target_include_directories(AlpacaMarketFeed PUBLIC
+        ${CMAKE_SOURCE_DIR}/include
 )
-
-target_link_libraries(web_socket_session
-    PUBLIC
-    Boost::system
-    OpenSSL::SSL
-    OpenSSL::Crypto
+target_link_libraries(AlpacaMarketFeed PUBLIC
+        WebSocketSession
+        nlohmann_json::nlohmann_json
+        LoggingUtils
 )
-
-target_compile_features(web_socket_session PUBLIC cxx_std_20)

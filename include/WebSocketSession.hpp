@@ -10,11 +10,9 @@
 #include <functional>
 #include <iostream>
 #include <memory>
-#include <openssl/ssl.h>
 #include <queue>
 #include <string>
 #include <string_view>
-#include <thread>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -23,7 +21,7 @@ namespace net = boost::asio;
 namespace ssl = boost::asio::ssl;
 using tcp = boost::asio::ip::tcp;
 
-struct web_socket_session_config
+struct WebSocketSessionConfig
 {
   std::string host;
   std::string port;
@@ -33,24 +31,22 @@ struct web_socket_session_config
   ssl::context &ssl_ctxt;
 };
 
-class web_socket_session
-    : public std::enable_shared_from_this<web_socket_session>
+class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
 {
 public:
   using frame_handler = std::function<void (std::string_view)>;
 
-  static std::shared_ptr<web_socket_session>
-  create (net::io_context &ioc, const web_socket_session_config &config,
-          frame_handler on_frame);
+  static std::shared_ptr<WebSocketSession>
+  create (net::io_context &ioc, const WebSocketSessionConfig &config,
+          const frame_handler &on_frame);
 
-  explicit web_socket_session (net::io_context &ioc,
-                               web_socket_session_config cfg);
+  explicit WebSocketSession (net::io_context &ioc, WebSocketSessionConfig cfg);
 
   void start ();
 
   void stop ();
 
-  void send (const std::string_view text);
+  void send (std::string_view text);
 
 private:
   void fail (const beast::error_code &ec, char const *what);
@@ -82,7 +78,7 @@ private:
 
   void reconnect ();
 
-  web_socket_session_config _config;
+  WebSocketSessionConfig _config;
 
   //
   // Boost::Beast state

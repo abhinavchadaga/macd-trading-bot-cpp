@@ -1,15 +1,12 @@
 add_executable(unit_tests
-        test_web_socket_session.cpp
+        TestWebSocketSession.cpp
+        TestAlpacaWSMarketFeed.cpp
 )
-
 target_link_libraries(unit_tests
         PRIVATE
-        web_socket_session
+        WebSocketSession
+        AlpacaMarketFeed
         GTest::gtest_main
-        Boost::system
-        OpenSSL::SSL
-        OpenSSL::Crypto
-        nlohmann_json::nlohmann_json
 )
 
 target_include_directories(unit_tests
