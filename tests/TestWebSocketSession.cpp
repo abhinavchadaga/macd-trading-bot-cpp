@@ -1,4 +1,4 @@
-#include "web_socket_session.hpp"
+#include "WebSocketSession.hpp"
 #include <boost/asio.hpp>
 #include <chrono>
 #include <filesystem>
@@ -62,17 +62,17 @@ TEST_F (WebSocketSessionTest, EchoRoundTrip)
   std::promise<std::string> got;
   auto fut = got.get_future ();
 
-  const web_socket_session_config config{ .host = "127.0.0.1",
-                                          .port = "9001",
-                                          .endpoint = "/",
-                                          .auth_msg = "",
-                                          .sub_msg = "",
-                                          .ssl_ctxt = ssl_ctxt };
+  const WebSocketSessionConfig config{ .host = "127.0.0.1",
+                                       .port = "9001",
+                                       .endpoint = "/",
+                                       .auth_msg = "",
+                                       .sub_msg = "",
+                                       .ssl_ctxt = ssl_ctxt };
 
-  auto wss = web_socket_session::create (ioc, config,
-                                         [&] (const std::string_view frame) {
-                                           got.set_value (std::string (frame));
-                                         });
+  auto wss = WebSocketSession::create (ioc, config,
+                                       [&] (const std::string_view frame) {
+                                         got.set_value (std::string (frame));
+                                       });
 
   wss->start ();
   asio::post (ioc, [wss] { wss->send ("ping"); });

@@ -1,16 +1,16 @@
 #include "AlpacaWSMarketFeed.hpp"
-#include "logging_utils.hpp"
+#include "LoggingUtils.hpp"
 #include <iomanip>
 #include <sstream>
 
 INITIALIZE_EASYLOGGINGPP
 
-AlpacaWSMarketFeed::AlpacaWSMarketFeed (asio::io_context &ioc,
-                                        const config &cfg)
-  : _ioc{ ioc }, _config{ cfg }, _ssl_context{ ssl::context::tls_client }
+AlpacaWSMarketFeed::AlpacaWSMarketFeed (asio::io_context &ioc, config cfg)
+    : _ioc{ ioc }, _config{ std::move (cfg) },
+      _ssl_context{ ssl::context::tls_client }
 {
-  configure_logging();
-  CLASS_LOGGER(AlpacaWSMarketFeed);
+  configure_logging ();
+  CLASS_LOGGER (AlpacaWSMarketFeed);
   _ssl_context.set_verify_mode (ssl::context::verify_none);
 }
 
@@ -18,11 +18,7 @@ void
 AlpacaWSMarketFeed::start ()
 {
   std::string host;
-  if (_config.test_mode)
-    {
-      host = "stream.data.alpaca.markets";
-    }
-  else if (_config.sandbox)
+  if (_config.sandbox)
     {
       host = "stream.data.sandbox.alpaca.markets";
     }
@@ -41,22 +37,16 @@ AlpacaWSMarketFeed::start ()
       endpoint = "/v2/" + _config.feed;
     }
 
-  const web_socket_session_config ws_config{
-    .host = host,
-    .port = "443",
-    .endpoint = endpoint,
-    .auth_msg = "",
-    .sub_msg = "",
-    .ssl_ctxt = _ssl_context
-  };
+  const WebSocketSessionConfig ws_config{ .host = host,
+                                          .port = "443",
+                                          .endpoint = endpoint,
+                                          .auth_msg = "",
+                                          .sub_msg = "",
+                                          .ssl_ctxt = _ssl_context };
 
-  _ws_session = web_socket_session::create (
+  _ws_session = WebSocketSession::create (
       _ioc, ws_config,
-      [this](const std::string_view frame)
-      {
-        on_websocket_frame (frame);
-      }
-      );
+      [this] (const std::string_view frame) { on_websocket_frame (frame); });
 
   _ws_session->start ();
 }
@@ -103,29 +93,32 @@ AlpacaWSMarketFeed::on_websocket_frame (std::string_view frame)
   try
     {
       const auto json_array = nlohmann::json::parse (frame);
-      
+
       if (!json_array.is_array () || json_array.empty ())
         {
-          LOG_ERROR(AlpacaWSMarketFeed, on_websocket_frame) << "Expected non-empty JSON array, got: " << frame;
+          LOG_ERROR (AlpacaWSMarketFeed, on_websocket_frame)
+              << "Expected non-empty JSON array, got: " << frame;
           return;
         }
-      
-      for (const auto& json_msg : json_array)
+
+      for (const auto &json_msg : json_array)
         {
           if (!json_msg.contains ("T"))
             continue;
-            
+
           if (const std::string msg_type = json_msg["T"];
-            msg_type == "success" && json_msg.contains ("msg"))
+              msg_type == "success" && json_msg.contains ("msg"))
             {
               if (const std::string msg = json_msg["msg"]; msg == "connected")
                 {
-                  LOG_INFO(AlpacaWSMarketFeed, on_websocket_frame) << "Connected to Alpaca feed, sending auth...";
+                  LOG_INFO (AlpacaWSMarketFeed, on_websocket_frame)
+                      << "Connected to Alpaca feed, sending auth...";
                   send_auth_message ();
                 }
               else if (msg == "authenticated")
                 {
-                  LOG_INFO(AlpacaWSMarketFeed, on_websocket_frame) << "Authenticated successfully";
+                  LOG_INFO (AlpacaWSMarketFeed, on_websocket_frame)
+                      << "Authenticated successfully";
                   _authenticated = true;
                   if (!_subscribed_symbols.empty ())
                     {
@@ -139,25 +132,25 @@ AlpacaWSMarketFeed::on_websocket_frame (std::string_view frame)
             }
           else if (msg_type == "error")
             {
-              LOG_ERROR(AlpacaWSMarketFeed, on_websocket_frame) << "Alpaca feed error: " << json_msg.dump();
+              LOG_ERROR (AlpacaWSMarketFeed, on_websocket_frame)
+                  << "Alpaca feed error: " << json_msg.dump ();
             }
         }
     }
   catch (const std::exception &e)
     {
-      LOG_ERROR(AlpacaWSMarketFeed, on_websocket_frame) << "Error parsing JSON frame: " << e.what();
-      LOG_ERROR(AlpacaWSMarketFeed, on_websocket_frame) << "Frame: " << frame;
+      LOG_ERROR (AlpacaWSMarketFeed, on_websocket_frame)
+          << "Error parsing JSON frame: " << e.what ();
+      LOG_ERROR (AlpacaWSMarketFeed, on_websocket_frame) << "Frame: " << frame;
     }
 }
 
 void
 AlpacaWSMarketFeed::send_auth_message ()
 {
-  nlohmann::json auth_msg = {
-    { "action", "auth" },
-    { "key", _config.api_key },
-    { "secret", _config.api_secret }
-  };
+  nlohmann::json auth_msg = { { "action", "auth" },
+                              { "key", _config.api_key },
+                              { "secret", _config.api_secret } };
 
   if (_ws_session)
     {
@@ -168,10 +161,8 @@ AlpacaWSMarketFeed::send_auth_message ()
 void
 AlpacaWSMarketFeed::send_subscription_message ()
 {
-  const nlohmann::json sub_msg = {
-    { "action", "subscribe" },
-    { "bars", _subscribed_symbols }
-  };
+  const nlohmann::json sub_msg
+      = { { "action", "subscribe" }, { "bars", _subscribed_symbols } };
 
   if (_ws_session)
     {
@@ -183,7 +174,8 @@ AlpacaWSMarketFeed::send_subscription_message ()
         {
           symbols_stream << symbol << " ";
         }
-      LOG_INFO(AlpacaWSMarketFeed, send_subscription_message) << symbols_stream.str();
+      LOG_INFO (AlpacaWSMarketFeed, send_subscription_message)
+          << symbols_stream.str ();
     }
 }
 
@@ -207,8 +199,8 @@ AlpacaWSMarketFeed::parse_bar_message (const nlohmann::json &message)
 
       if (ss.fail ())
         {
-          throw std::runtime_error (
-              "Failed to parse timestamp: " + timestamp_str);
+          throw std::runtime_error ("Failed to parse timestamp: "
+                                    + timestamp_str);
         }
 
       // Convert to time_t and then to system_clock time_point
@@ -223,8 +215,10 @@ AlpacaWSMarketFeed::parse_bar_message (const nlohmann::json &message)
     }
   catch (const std::exception &e)
     {
-      LOG_ERROR(AlpacaWSMarketFeed, parse_bar_message) << "Error parsing bar message: " << e.what();
-      LOG_ERROR(AlpacaWSMarketFeed, parse_bar_message) << "Message: " << message.dump();
+      LOG_ERROR (AlpacaWSMarketFeed, parse_bar_message)
+          << "Error parsing bar message: " << e.what ();
+      LOG_ERROR (AlpacaWSMarketFeed, parse_bar_message)
+          << "Message: " << message.dump ();
     }
 }
 

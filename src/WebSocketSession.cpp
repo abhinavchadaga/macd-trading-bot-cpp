@@ -1,26 +1,31 @@
-#include "web_socket_session.hpp"
+#include "WebSocketSession.hpp"
 
-std::shared_ptr<web_socket_session>
-web_socket_session::create (net::io_context &ioc,
-                            const web_socket_session_config &config,
-                            frame_handler on_frame)
+#include "LoggingUtils.hpp"
+
+#include <thread>
+
+std::shared_ptr<WebSocketSession>
+WebSocketSession::create (net::io_context &ioc,
+                          const WebSocketSessionConfig &config,
+                          const frame_handler &on_frame)
 {
-  auto session = std::make_shared<web_socket_session> (ioc, config);
-  session->_frame_handler = std::move (on_frame);
+  auto session = std::make_shared<WebSocketSession> (ioc, config);
+  session->_frame_handler = on_frame;
   return session;
 }
 
-web_socket_session::web_socket_session (net::io_context &ioc,
-                                        web_socket_session_config cfg)
+WebSocketSession::WebSocketSession (net::io_context &ioc,
+                                    WebSocketSessionConfig cfg)
     : _config{ std::move (cfg) }, _resolver{ net::make_strand (ioc) },
       _ws{ net::make_strand (ioc), _config.ssl_ctxt },
       _ping_timer{ net::make_strand (ioc) }, _connected{ false },
       _should_reconnect{ true }
 {
+  CLASS_LOGGER (WebSocketSession);
 }
 
 void
-web_socket_session::start ()
+WebSocketSession::start ()
 {
   if (_connected)
     return;
@@ -29,7 +34,7 @@ web_socket_session::start ()
 }
 
 void
-web_socket_session::stop ()
+WebSocketSession::stop ()
 {
   _should_reconnect = false;
   _connected = false;
@@ -49,7 +54,7 @@ web_socket_session::stop ()
 }
 
 void
-web_socket_session::send (const std::string_view text)
+WebSocketSession::send (const std::string_view text)
 {
   _write_queue.emplace (text);
   if (_connected && _write_queue.size () == 1)
@@ -59,9 +64,10 @@ web_socket_session::send (const std::string_view text)
 }
 
 void
-web_socket_session::fail (const beast::error_code &ec, char const *what)
+WebSocketSession::fail (const beast::error_code &ec, char const *what)
 {
-  std::cerr << what << ": " << ec.message () << "\n";
+  LOG_ERROR (WebSocketSession, fail)
+      << what << ": " << ec.message () << std::endl;
   _connected = false;
   if (_should_reconnect)
     {
@@ -70,7 +76,7 @@ web_socket_session::fail (const beast::error_code &ec, char const *what)
 }
 
 void
-web_socket_session::resolve ()
+WebSocketSession::resolve ()
 {
   _resolver.async_resolve (_config.host, _config.port,
                            [self = shared_from_this ()] (
@@ -81,8 +87,8 @@ web_socket_session::resolve ()
 }
 
 void
-web_socket_session::on_resolve (const beast::error_code &ec,
-                                const tcp::resolver::results_type &results)
+WebSocketSession::on_resolve (const beast::error_code &ec,
+                              const tcp::resolver::results_type &results)
 {
   if (ec)
     {
@@ -99,7 +105,7 @@ web_socket_session::on_resolve (const beast::error_code &ec,
 }
 
 void
-web_socket_session::on_connect (
+WebSocketSession::on_connect (
     beast::error_code error_code,
     const tcp::resolver::results_type::endpoint_type &endpoint_type)
 {
@@ -128,7 +134,7 @@ web_socket_session::on_connect (
 }
 
 void
-web_socket_session::on_ssl_handshake (const beast::error_code &error_code)
+WebSocketSession::on_ssl_handshake (const beast::error_code &error_code)
 {
   if (error_code)
     {
@@ -153,7 +159,7 @@ web_socket_session::on_ssl_handshake (const beast::error_code &error_code)
 }
 
 void
-web_socket_session::on_handshake (const beast::error_code &ec)
+WebSocketSession::on_handshake (const beast::error_code &ec)
 {
   if (ec)
     {
@@ -182,7 +188,7 @@ web_socket_session::on_handshake (const beast::error_code &ec)
 }
 
 void
-web_socket_session::do_read ()
+WebSocketSession::do_read ()
 {
   _ws.async_read (_buffer, [self = shared_from_this ()] (
                                const beast::error_code &ec,
@@ -192,8 +198,8 @@ web_socket_session::do_read ()
 }
 
 void
-web_socket_session::on_read (const beast::error_code &ec,
-                             std::size_t bytes_transferred)
+WebSocketSession::on_read (const beast::error_code &ec,
+                           std::size_t bytes_transferred)
 {
   boost::ignore_unused (bytes_transferred);
 
@@ -205,7 +211,7 @@ web_socket_session::on_read (const beast::error_code &ec,
   if (_frame_handler)
     {
       const auto data = beast::buffers_to_string (_buffer.data ());
-      std::cout << "Received message: " << data << std::endl;
+      LOG_INFO (WebSocketSession, on_read) << data << std::endl;
       _frame_handler (data);
     }
 
@@ -214,7 +220,7 @@ web_socket_session::on_read (const beast::error_code &ec,
 }
 
 void
-web_socket_session::do_write ()
+WebSocketSession::do_write ()
 {
   if (_write_queue.empty () || !_connected)
     return;
@@ -228,8 +234,8 @@ web_socket_session::do_write ()
 }
 
 void
-web_socket_session::on_write (const beast::error_code &ec,
-                              std::size_t bytes_transferred)
+WebSocketSession::on_write (const beast::error_code &ec,
+                            std::size_t bytes_transferred)
 {
   boost::ignore_unused (bytes_transferred);
 
@@ -246,7 +252,7 @@ web_socket_session::on_write (const beast::error_code &ec,
 }
 
 void
-web_socket_session::arm_heartbeat ()
+WebSocketSession::arm_heartbeat ()
 {
   _ping_timer.expires_after (std::chrono::seconds (30));
   _ping_timer.async_wait (
@@ -256,7 +262,7 @@ web_socket_session::arm_heartbeat ()
 }
 
 void
-web_socket_session::on_ping_timer (const beast::error_code &ec)
+WebSocketSession::on_ping_timer (const beast::error_code &ec)
 {
   if (ec || !_connected)
     return;
@@ -273,7 +279,7 @@ web_socket_session::on_ping_timer (const beast::error_code &ec)
 }
 
 void
-web_socket_session::reconnect ()
+WebSocketSession::reconnect ()
 {
   if (!_should_reconnect)
     return;

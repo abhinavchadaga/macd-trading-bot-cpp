@@ -1,12 +1,12 @@
 #pragma once
 
+#include "WebSocketSession.hpp"
 #include "types.hpp"
-#include "web_socket_session.hpp"
-#include <memory>
-#include <string>
 #include <boost/asio.hpp>
 #include <boost/signals2.hpp>
+#include <memory>
 #include <nlohmann/json.hpp>
+#include <string>
 
 namespace asio = boost::asio;
 namespace ssl = asio::ssl;
@@ -14,7 +14,7 @@ namespace ssl = asio::ssl;
 class AlpacaWSMarketFeed
 {
 public:
-  using bar_signal_t = boost::signals2::signal<void  (const bar &)>;
+  using bar_signal_t = boost::signals2::signal<void (const bar &)>;
 
   struct config
   {
@@ -25,7 +25,7 @@ public:
     bool test_mode{ true };
   };
 
-  explicit AlpacaWSMarketFeed (asio::io_context &ioc, const config &cfg);
+  explicit AlpacaWSMarketFeed (asio::io_context &ioc, config cfg);
 
   void start ();
 
@@ -35,10 +35,10 @@ public:
 
   void subscribe_to_all_bars ();
 
-  boost::signals2::connection connect_bar_handler (
-      const bar_signal_t::slot_type &handler);
+  boost::signals2::connection
+  connect_bar_handler (const bar_signal_t::slot_type &handler);
 
-  std::string get_websocket_url () const;
+  [[nodiscard]] std::string get_websocket_url () const;
 
 private:
   void on_websocket_frame (std::string_view frame);
@@ -52,7 +52,7 @@ private:
   asio::io_context &_ioc;
   config _config;
   ssl::context _ssl_context;
-  std::shared_ptr<web_socket_session> _ws_session;
+  std::shared_ptr<WebSocketSession> _ws_session;
 
   bar_signal_t _bar_signal;
   std::vector<std::string> _subscribed_symbols;
