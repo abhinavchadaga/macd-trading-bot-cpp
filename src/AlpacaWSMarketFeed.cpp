@@ -18,13 +18,22 @@ void
 AlpacaWSMarketFeed::start ()
 {
   std::string host;
-  if (_config.sandbox)
+  std::string port;
+
+  if (!_config.host.empty ())
+    {
+      host = _config.host;
+      port = _config.port.empty () ? "8765" : _config.port;
+    }
+  else if (_config.sandbox)
     {
       host = "stream.data.sandbox.alpaca.markets";
+      port = "443";
     }
   else
     {
       host = "stream.data.alpaca.markets";
+      port = "443";
     }
 
   std::string endpoint;
@@ -38,7 +47,7 @@ AlpacaWSMarketFeed::start ()
     }
 
   const WebSocketSessionConfig ws_config{ .host = host,
-                                          .port = "443",
+                                          .port = port,
                                           .endpoint = endpoint,
                                           .auth_msg = "",
                                           .sub_msg = "",

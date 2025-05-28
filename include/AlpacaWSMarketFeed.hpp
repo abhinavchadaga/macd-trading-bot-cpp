@@ -21,6 +21,8 @@ public:
     std::string api_key{};
     std::string api_secret{};
     std::string feed{ "iex" };
+    std::string host{};
+    std::string port{};
     bool sandbox{ false };
     bool test_mode{ true };
   };
