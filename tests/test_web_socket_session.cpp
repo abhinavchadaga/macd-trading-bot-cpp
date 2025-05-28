@@ -1,7 +1,6 @@
 #include "web_socket_session.hpp"
 #include <boost/asio.hpp>
 #include <chrono>
-#include <cstdlib>
 #include <filesystem>
 #include <future>
 #include <gtest/gtest.h>
