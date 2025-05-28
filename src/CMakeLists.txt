@@ -24,3 +24,11 @@ target_link_libraries(AlpacaMarketFeed PUBLIC
         nlohmann_json::nlohmann_json
         LoggingUtils
 )
+
+add_library(BarAggregator BarAggregator.cpp)
+target_include_directories(BarAggregator PUBLIC
+        ${CMAKE_SOURCE_DIR}/include
+)
+target_link_libraries(BarAggregator PUBLIC
+        Boost::system
+)
