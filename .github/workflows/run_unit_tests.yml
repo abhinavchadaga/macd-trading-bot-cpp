@@ -3,20 +3,8 @@ name: Run Unit Tests
 on:
   pull_request:
     branches: [ master ]
-    paths:
-      - 'src/**'
-      - 'include/**'
-      - 'tests/**'
-      - 'CMakeLists.txt'
-      - 'run_unit_tests.yml'
   push:
     branches: [ master ]
-    paths:
-      - 'src/**'
-      - 'include/**'
-      - 'tests/**'
-      - 'CMakeLists.txt'
-      - 'run_unit_tests.yml'
 
 jobs:
   test:
