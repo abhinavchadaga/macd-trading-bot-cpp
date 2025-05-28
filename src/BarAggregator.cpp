@@ -1,5 +1,6 @@
 #include "BarAggregator.hpp"
 #include <algorithm>
+#include <stdexcept>
 
 BarAggregator::BarAggregator (int aggregation_minutes)
     : _aggregation_minutes{ aggregation_minutes }
@@ -9,22 +10,26 @@ BarAggregator::BarAggregator (int aggregation_minutes)
 void
 BarAggregator::on_bar (const Bar &input_bar)
 {
-  if (should_start_new_aggregation (input_bar.time ()))
+  if (_expected_next_timestamp.has_value ())
     {
-      if (_current_aggregated_bar.has_value ())
+      if (input_bar.time () != _expected_next_timestamp.value ())
         {
-          emit_aggregated_bar ();
+          throw std::runtime_error (
+              "Bar timestamp does not match expected sequence");
         }
+    }
 
-      _current_boundary = get_aggregation_boundary (input_bar.time ());
+  if (_bars_in_current_window == 0)
+    {
       _current_aggregated_bar
           = Bar{ input_bar.symbol (), input_bar.open (),  input_bar.high (),
                  input_bar.low (),    input_bar.close (), input_bar.volume (),
-                 _current_boundary };
+                 input_bar.time () };
+      _bars_in_current_window = 1;
     }
-  else if (_current_aggregated_bar.has_value ())
+  else
     {
-      auto &current = _current_aggregated_bar.value ();
+      const auto &current = _current_aggregated_bar.value ();
       _current_aggregated_bar
           = Bar{ current.symbol (),
                  current.open (),
@@ -32,7 +37,16 @@ BarAggregator::on_bar (const Bar &input_bar)
                  std::min (current.low (), input_bar.low ()),
                  input_bar.close (),
                  current.volume () + input_bar.volume (),
-                 _current_boundary };
+                 current.time () };
+      _bars_in_current_window++;
+    }
+
+  _expected_next_timestamp = input_bar.time () + std::chrono::minutes (1);
+
+  if (_bars_in_current_window == _aggregation_minutes)
+    {
+      emit_aggregated_bar ();
+      _bars_in_current_window = 0;
     }
 }
 
@@ -50,31 +64,4 @@ BarAggregator::emit_aggregated_bar ()
     {
       _aggregated_bar_signal (_current_aggregated_bar.value ());
     }
-}
-
-bool
-BarAggregator::should_start_new_aggregation (
-    const Bar::timestamp_t &timestamp) const
-{
-  if (!_current_aggregated_bar.has_value ())
-    {
-      return true;
-    }
-
-  return get_aggregation_boundary (timestamp) != _current_boundary;
-}
-
-Bar::timestamp_t
-BarAggregator::get_aggregation_boundary (
-    const Bar::timestamp_t &timestamp) const
-{
-  auto time_point
-      = std::chrono::time_point_cast<std::chrono::minutes> (timestamp);
-  auto minutes_since_epoch = time_point.time_since_epoch ().count ();
-
-  auto aligned_minutes
-      = (minutes_since_epoch / _aggregation_minutes) * _aggregation_minutes;
-
-  return std::chrono::sys_time<std::chrono::nanoseconds>{ std::chrono::minutes{
-      aligned_minutes } };
 }

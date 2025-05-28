@@ -19,15 +19,10 @@ public:
 private:
   void emit_aggregated_bar ();
 
-  [[nodiscard]] bool
-  should_start_new_aggregation (const Bar::timestamp_t &timestamp) const;
-
-  [[nodiscard]] Bar::timestamp_t
-  get_aggregation_boundary (const Bar::timestamp_t &timestamp) const;
-
   int _aggregation_minutes;
   std::optional<Bar> _current_aggregated_bar{};
-  Bar::timestamp_t _current_boundary{};
+  int _bars_in_current_window{};
+  std::optional<Bar::timestamp_t> _expected_next_timestamp{};
 
   aggregated_bar_signal_t _aggregated_bar_signal;
 };
