@@ -13,5 +13,5 @@ configure_logging ()
                    "true");
 
   el::Loggers::reconfigureAllLoggers (defaultConf);
-  el::Loggers::getLogger ("main");
+  el::Loggers::getLogger ("MACDTradingBot");
 }

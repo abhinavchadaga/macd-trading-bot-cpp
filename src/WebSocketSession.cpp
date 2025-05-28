@@ -211,7 +211,7 @@ WebSocketSession::on_read (const beast::error_code &ec,
   if (_frame_handler)
     {
       const auto data = beast::buffers_to_string (_buffer.data ());
-      LOG_INFO (WebSocketSession, on_read) << data << std::endl;
+      LOG_INFO (WebSocketSession, on_read) << data;
       _frame_handler (data);
     }
 

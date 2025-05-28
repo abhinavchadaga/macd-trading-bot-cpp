@@ -6,7 +6,8 @@
   el::Logger *_class_logger = el::Loggers::getLogger (#class_name)
 
 #define FUNC_LOG(level, class_name, func_name)                                \
-  CLOG (level, "main") << "[" << #class_name << "::" << #func_name << "] "
+  CLOG (level, "MACDTradingBot")                                              \
+      << "[" << #class_name << "::" << #func_name << "] "
 
 #define LOG_INFO(class_name, func_name) FUNC_LOG (INFO, class_name, func_name)
 
