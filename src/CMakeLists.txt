@@ -9,8 +9,6 @@ target_include_directories(web_socket_session
 
 target_link_libraries(web_socket_session
     PUBLIC
-    Boost::asio
-    Boost::beast
     Boost::system
     OpenSSL::SSL
     OpenSSL::Crypto
