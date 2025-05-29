@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.hpp"
+#include "Bar.hpp"
 #include <boost/signals2.hpp>
 #include <optional>
 

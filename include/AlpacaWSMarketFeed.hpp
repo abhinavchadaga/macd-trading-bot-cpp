@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Bar.hpp"
 #include "WebSocketSession.hpp"
-#include "types.hpp"
 #include <boost/asio.hpp>
 #include <boost/signals2.hpp>
 #include <memory>
