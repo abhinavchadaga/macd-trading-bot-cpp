@@ -18,13 +18,22 @@ void
 AlpacaWSMarketFeed::start ()
 {
   std::string host;
-  if (_config.sandbox)
+  std::string port;
+
+  if (!_config.host.empty ())
+    {
+      host = _config.host;
+      port = _config.port.empty () ? "8765" : _config.port;
+    }
+  else if (_config.sandbox)
     {
       host = "stream.data.sandbox.alpaca.markets";
+      port = "443";
     }
   else
     {
       host = "stream.data.alpaca.markets";
+      port = "443";
     }
 
   std::string endpoint;
@@ -38,7 +47,7 @@ AlpacaWSMarketFeed::start ()
     }
 
   const WebSocketSessionConfig ws_config{ .host = host,
-                                          .port = "443",
+                                          .port = port,
                                           .endpoint = endpoint,
                                           .auth_msg = "",
                                           .sub_msg = "",
@@ -209,7 +218,7 @@ AlpacaWSMarketFeed::parse_bar_message (const nlohmann::json &message)
       auto timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds> (
           time_point);
 
-      bar new_bar{ symbol, open, high, low, close, volume, timestamp };
+      Bar new_bar{ symbol, open, high, low, close, volume, timestamp };
 
       _bar_signal (new_bar);
     }

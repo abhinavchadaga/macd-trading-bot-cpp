@@ -1,11 +1,13 @@
 add_executable(unit_tests
         TestWebSocketSession.cpp
         TestAlpacaWSMarketFeed.cpp
+        TestBarAggregatorIntegration.cpp
 )
 target_link_libraries(unit_tests
         PRIVATE
         WebSocketSession
         AlpacaMarketFeed
+        BarAggregator
         GTest::gtest_main
 )
 

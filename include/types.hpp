@@ -3,12 +3,12 @@
 #include <chrono>
 #include <string>
 
-class bar
+class Bar
 {
 public:
   using timestamp_t = std::chrono::sys_time<std::chrono::nanoseconds>;
 
-  bar (std::string symbol, const double open, const double high,
+  Bar (std::string symbol, const double open, const double high,
        const double low, const double close, const uint64_t volume,
        const timestamp_t ts)
       : _symbol{ std::move (symbol) }, _open{ open }, _high{ high },

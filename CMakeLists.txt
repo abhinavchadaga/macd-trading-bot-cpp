@@ -13,4 +13,4 @@ add_subdirectory(src)
 add_subdirectory(third-party)
 
 enable_testing()
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+add_subdirectory(tests)
