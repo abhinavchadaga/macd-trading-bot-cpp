@@ -4,7 +4,9 @@ add_executable(unit_tests
         TestBarAggregatorIntegration.cpp
 )
 target_link_libraries(unit_tests
-        PRIVATE
+        PUBLIC
+        easylogging
+        LoggingUtils
         WebSocketSession
         AlpacaMarketFeed
         BarAggregator
@@ -12,7 +14,7 @@ target_link_libraries(unit_tests
 )
 
 target_include_directories(unit_tests
-        PRIVATE
+        PUBLIC
         ${CMAKE_SOURCE_DIR}/include
 )
 
