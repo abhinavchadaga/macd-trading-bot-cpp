@@ -44,17 +44,20 @@ install_websocat() {
 
     local os=$(uname -s)
     local arch=$(uname -m)
-    local platform=""
+    local package_name=""
 
     case "$os-$arch" in
         "Darwin-arm64")
-            platform="aarch64-apple-darwin"
+            package_name="websocat.aarch64-apple-darwin"
             ;;
         "Darwin-x86_64")
-            platform="x86_64-apple-darwin"
+            package_name="websocat.x86_64-apple-darwin"
             ;;
         "Linux-x86_64")
-            platform="x86_64-unknown-linux-musl"
+            package_name="websocat.x86_64-unknown-linux-musl"
+            ;;
+        "Linux-aarch64")
+            package_name="websocat_max.aarch64-unknown-linux-musl"
             ;;
         *)
             log_error "Unsupported platform: $os-$arch"
@@ -62,7 +65,7 @@ install_websocat() {
             ;;
     esac
 
-    local url="https://github.com/vi/websocat/releases/download/${WEBSOCAT_VERSION}/websocat.${platform}"
+    local url="https://github.com/vi/websocat/releases/download/${WEBSOCAT_VERSION}/${package_name}"
     local temp_file="/tmp/websocat"
 
     if ! curl -L -o "$temp_file" "$url"; then

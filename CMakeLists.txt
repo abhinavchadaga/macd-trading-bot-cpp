@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.28)
 project(macd_trading_bot_cpp)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(OpenSSL REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost CONFIG REQUIRED COMPONENTS system)
 find_package(nlohmann_json REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 
