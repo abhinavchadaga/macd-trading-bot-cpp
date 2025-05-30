@@ -4,6 +4,7 @@ add_executable(unit_tests
         TestBarAggregatorIntegration.cpp
         TestBar.cpp
         TestUtils.cpp
+        TestIndicators.cpp
 )
 target_link_libraries(unit_tests
         PUBLIC
@@ -12,9 +13,27 @@ target_link_libraries(unit_tests
         WebSocketSession
         AlpacaMarketFeed
         Utils
+        Indicators
         GTest::gtest_main
 )
 
+pkg_check_modules(TALIB REQUIRED IMPORTED_TARGET ta-lib)
+target_link_libraries(unit_tests PUBLIC PkgConfig::TALIB)
+
+## Add TA-lib manually for Homebrew installation
+#target_include_directories(unit_tests
+#        PUBLIC
+#        /opt/homebrew/include/ta-lib
+#)
+#target_link_directories(unit_tests
+#        PUBLIC
+#        /opt/homebrew/lib
+#)
+#target_link_libraries(unit_tests
+#        PUBLIC
+#        ta-lib
+#)
+#
 target_include_directories(unit_tests
         PUBLIC
         ${CMAKE_SOURCE_DIR}/include

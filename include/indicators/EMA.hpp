@@ -3,22 +3,37 @@
 #include "Indicator.hpp"
 
 #include <cstddef>
-#include <string>
-#include <unordered_map>
+#include <string_view>
 
-class EMA final : Indicator
+class EMA final : public Indicator
 {
 public:
-  explicit EMA (std::size_t window);
+  static constexpr std::size_t SMOOTHING_FACTOR{ 2 };
 
-  bool ready () override;
+  static constexpr std::string_view name{ "EMA" };
 
-  void push (const Bar &) override;
+  explicit EMA (std::size_t period);
+  explicit EMA (const IndicatorConfig &config);
 
-  std::unordered_map<std::string, double> snapshot () override;
+  //
+  // Indicator methods
+
+  [[nodiscard]] bool is_ready () const override;
+
+  [[nodiscard]] Snapshot read () const override;
+
+  void write (const Bar &bar) override;
+
+  //
+  // EMA methods
+
+  void write (double close);
+
+  [[nodiscard]] std::size_t period () const;
 
 private:
-  double _value{};
-  std::size_t _window{};
-  std::size_t _n_periods{};
+  double _value{ 0.0 };
+  std::size_t _n{};
+  double _alpha{};
+  std::size_t _period{};
 };

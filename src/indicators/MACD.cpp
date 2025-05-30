@@ -1,6 +1,22 @@
 #include "indicators/MACD.hpp"
+#include "IndicatorRegistrar.hpp"
 
-#include <unordered_map>
+REGISTER_INDICATOR (MACD);
+
+namespace
+{
+std::size_t
+extract_period (const IndicatorConfig &config, const std::string_view key)
+{
+  const auto it = config.params.find (std::string{ key });
+  if (it == config.params.end ())
+    {
+      throw std::runtime_error{ "MACD config requires a " + std::string{ key }
+                                + " key" };
+    }
+  return static_cast<std::size_t> (it->second);
+}
+}
 
 MACD::MACD (const std::size_t fast_period, const std::size_t slow_period,
             const std::size_t signal_period)
@@ -9,35 +25,45 @@ MACD::MACD (const std::size_t fast_period, const std::size_t slow_period,
 {
 }
 
-bool
-MACD::ready ()
+MACD::MACD (const IndicatorConfig &config)
+    : MACD{ extract_period (config, "fast_period"),
+            extract_period (config, "slow_period"),
+            extract_period (config, "signal_period") }
 {
-  return _fast_ema.ready () && _slow_ema.ready () && _signal_ema.ready ();
+}
+
+bool
+MACD::is_ready () const
+{
+  return _slow_ema.is_ready () && _fast_ema.is_ready ()
+         && _signal_ema.is_ready ();
 }
 
 void
-MACD::push (const Bar &bar)
+MACD::write (const Bar &bar)
 {
-  _fast_ema.push (bar);
-  _slow_ema.push (bar);
+  _fast_ema.write (bar);
+  _slow_ema.write (bar);
 
-  if (_fast_ema.ready () && _slow_ema.ready ())
+  if (_fast_ema.is_ready () && _slow_ema.is_ready ())
     {
-      const auto &[f_key, fast_ema] = *_fast_ema.snapshot ().begin ();
-      const auto &[s_key, slow_ema] = *_slow_ema.snapshot ().begin ();
-
-      _macd_value = fast_ema - slow_ema;
-      _signal_ema.push (_macd_value);
+      const double fast_ema_value = _fast_ema.read ().begin ()->second;
+      const double slow_ema_value = _slow_ema.read ().begin ()->second;
+      _signal_ema.write (fast_ema_value - slow_ema_value);
     }
 }
 
-std::unordered_map<std::string, double>
-MACD::snapshot ()
+Indicator::Snapshot
+MACD::read () const
 {
-  if (!ready ())
-    throw std::runtime_error ("MACD::snapshot(): no data available");
+  const double fast_ema_value = _fast_ema.read ().begin ()->second;
+  const double slow_ema_value = _slow_ema.read ().begin ()->second;
+  const double signal_line = _signal_ema.read ().begin ()->second;
 
-  return { { "macd", _macd_value },
-           { "signal", _signal_ema.value () },
-           { "histogram", _macd_value - _signal_ema.value () } };
+  const double macd_line = fast_ema_value - slow_ema_value;
+  const double histogram = macd_line - signal_line;
+
+  return { { "macd", macd_line },
+           { "signal", signal_line },
+           { "histogram", histogram } };
 }

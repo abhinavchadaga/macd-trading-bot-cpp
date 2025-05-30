@@ -2,27 +2,30 @@
 
 #include "EMA.hpp"
 #include "Indicator.hpp"
-#include "ScalarEMA.hpp"
 
-#include <string>
-#include <unordered_map>
+#include <string_view>
 
-class MACD final : Indicator
+class MACD final : public Indicator
 {
 public:
+  static constexpr std::string_view name{ "MACD" };
+
   explicit MACD (std::size_t fast_period = 12, std::size_t slow_period = 26,
                  std::size_t signal_period = 9);
 
-  bool ready () override;
+  explicit MACD (const IndicatorConfig &config);
 
-  void push (const Bar &) override;
+  //
+  // Indicator methods
 
-  std::unordered_map<std::string, double> snapshot () override;
+  [[nodiscard]] bool is_ready () const override;
+
+  [[nodiscard]] Snapshot read () const override;
+
+  void write (const Bar &) override;
 
 private:
   EMA _fast_ema;
   EMA _slow_ema;
-  ScalarEMA _signal_ema;
-
-  double _macd_value{};
+  EMA _signal_ema;
 };
