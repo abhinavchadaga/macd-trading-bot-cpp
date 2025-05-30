@@ -19,7 +19,9 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake clang build-essential libssl-dev libboost-all-dev nlohmann-json3-dev libgtest-dev ninja-build
+        sudo apt-get install -y cmake clang build-essential libssl-dev libboost-all-dev nlohmann-json3-dev libgtest-dev ninja-build wget
+        wget https://github.com/ta-lib/ta-lib/releases/download/v0.6.4/ta-lib_0.6.4_amd64.deb
+        sudo dpkg -i ta-lib_0.6.4_amd64.deb
 
     - name: Configure CMake
       run: cmake -S . -B build/Release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
