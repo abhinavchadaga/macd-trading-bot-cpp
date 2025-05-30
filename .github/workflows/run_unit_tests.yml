@@ -10,25 +10,32 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      ALPACA_API_KEY:  ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake clang build-essential libssl-dev libboost-all-dev nlohmann-json3-dev libgtest-dev ninja-build wget
-        wget https://github.com/ta-lib/ta-lib/releases/download/v0.6.4/ta-lib_0.6.4_amd64.deb
-        sudo dpkg -i ta-lib_0.6.4_amd64.deb
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake clang build-essential libssl-dev libboost-all-dev nlohmann-json3-dev libgtest-dev ninja-build wget
 
-    - name: Configure CMake
-      run: cmake -S . -B build/Release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+      - name: Install ta-lib from source
+        run: |
+          wget https://github.com/ta-lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-src.tar.gz
+          tar -xzf ta-lib-0.6.4-src.tar.gz
+          cd ta-lib-0.6.4
+          ./configure
+          make -j $(nproc)
+          sudo make install
 
-    - name: Build project
-      run: cmake --build build/Release
+      - name: Configure CMake
+        run: cmake -S . -B build/Release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
 
-    - name: Run all unit tests
-      run: |
-        build/Release/tests/unit_tests
+      - name: Build project
+        run: cmake --build build/Release
+
+      - name: Run all unit tests
+        run: |
+          build/Release/tests/unit_tests
