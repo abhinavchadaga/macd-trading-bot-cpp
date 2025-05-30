@@ -13,4 +13,5 @@ RUN apt-get update && apt-get -y install  \
     git \
     python3-dev \
     python3-venv \
-    nlohmann-json3-dev
+    nlohmann-json3-dev \
+    libssl-dev
