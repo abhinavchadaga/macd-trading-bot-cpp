@@ -33,7 +33,8 @@ TEST_F (BarAggregatorIntegrationTest, AggregatesHistoricalBarsCorrectly)
   std::atomic minute_bar_count{ 0 };
   std::atomic aggregated_bar_count{ 0 };
 
-  const std::string script_path = "../../test-utils/run_historical_client.sh";
+  const std::string script_path
+      = "../../../test-utils/run_historical_client.sh";
 
   if (!std::filesystem::exists (script_path))
     {
@@ -93,7 +94,6 @@ TEST_F (BarAggregatorIntegrationTest, AggregatesHistoricalBarsCorrectly)
   const auto start_time = std::chrono::steady_clock::now ();
   constexpr auto timeout = std::chrono::seconds (60);
 
-  // Wait for all 20 minute bars to be received
   while (minute_bar_count.load () < 20
          && (std::chrono::steady_clock::now () - start_time) < timeout)
     {
@@ -111,7 +111,6 @@ TEST_F (BarAggregatorIntegrationTest, AggregatesHistoricalBarsCorrectly)
   std::system ("pkill -f run_historical_client.sh || true");
   std::this_thread::sleep_for (std::chrono::seconds (3));
 
-  // Verify we received the expected number of bars
   EXPECT_EQ (minute_bar_count.load (), 20)
       << "Should have received exactly 20 1-minute bars";
   EXPECT_EQ (aggregated_bar_count.load (), 4)
