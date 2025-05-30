@@ -175,12 +175,20 @@ class HistoricalAlpacaWSEndpoint:
         await self._stream_bars(websocket)
 
     async def main(self):
-        async with serve(self.run, "localhost", port=8765, ssl=self._ssl_context) as server:
-            await server.serve_forever()
+        self._server = None
+        try:
+            self._server = await serve(self.run, "localhost", port=8765, ssl=self._ssl_context)
+            await self._server.serve_forever()
+        except asyncio.CancelledError:
+            pass
+        finally:
+            if self._server:
+                self._server.close()
+                await self._server.wait_closed()
 
 
-def main():
-    """Main entry point."""
+async def async_main():
+    """Async main entry point."""
     import argparse
 
     parser = argparse.ArgumentParser(description="Historical Alpaca WebSocket Endpoint")
@@ -194,18 +202,36 @@ def main():
 
     args = parser.parse_args()
 
+    endpoint = HistoricalAlpacaWSEndpoint(args.csv_path, args.delay)
+
+    loop = asyncio.get_running_loop()
+    main_task = asyncio.create_task(endpoint.main())
+
+    def signal_handler():
+        print("Received signal, shutting down gracefully...")
+        main_task.cancel()
+
     import signal
-
-    def signal_handler(signum, _):
-        print(f"Received signal {signum}, shutting down gracefully...")
-        raise KeyboardInterrupt
-
-    signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
+    loop.add_signal_handler(signal.SIGTERM, signal_handler)
+    loop.add_signal_handler(signal.SIGINT, signal_handler)
 
     try:
-        endpoint = HistoricalAlpacaWSEndpoint(args.csv_path, args.delay)
-        asyncio.run(endpoint.main())
+        await main_task
+    except asyncio.CancelledError:
+        print("Server stopped.")
+
+    # Cancel any remaining tasks
+    pending_tasks = [task for task in asyncio.all_tasks() if not task.done()]
+    if pending_tasks:
+        for task in pending_tasks:
+            task.cancel()
+        await asyncio.gather(*pending_tasks, return_exceptions=True)
+
+
+def main():
+    """Main entry point."""
+    try:
+        asyncio.run(async_main())
     except FileNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -223,7 +249,6 @@ def main():
         if key_file.exists():
             key_file.unlink()
             print(f"Cleaned up key: {key_file}")
-
 
         print("Graceful shutdown complete.")
 
