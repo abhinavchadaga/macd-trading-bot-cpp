@@ -17,12 +17,7 @@ protected:
   void
   SetUp () override
   {
-    std::string script_path = "../../test-utils/start-websocat-echo.sh";
-    if (!fs::exists (script_path))
-      script_path = "../test-utils/start-websocat-echo.sh";
-    if (!fs::exists (script_path))
-      script_path = "test-utils/start-websocat-echo.sh";
-
+    std::string script_path = "../../../test-utils/start-websocat-echo.sh";
     if (!fs::exists (script_path))
       GTEST_SKIP () << "websocat setup script not found: " << script_path;
 

@@ -98,7 +98,8 @@ TEST_F (AlpacaWSMarketFeedTest, HistoricalDataFeedTest)
   std::atomic received_bars{ 0 };
   std::vector<std::string> bar_strings;
 
-  const std::string script_path = "../../test-utils/run_historical_client.sh";
+  const std::string script_path
+      = "../../../test-utils/run_historical_client.sh";
 
   if (!std::filesystem::exists (script_path))
     {

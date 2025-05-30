@@ -22,6 +22,7 @@ WebSocketSession::WebSocketSession (net::io_context &ioc,
       _should_reconnect{ true }
 {
   CLASS_LOGGER (WebSocketSession);
+  configure_logging ();
 }
 
 void

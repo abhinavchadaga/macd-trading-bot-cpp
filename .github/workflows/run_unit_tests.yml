@@ -29,5 +29,5 @@ jobs:
 
     - name: Run all unit tests
       run: |
-        cd build/Release
-        ./tests/unit_tests
+        cd build/Release/tests
+        ./unit_tests
