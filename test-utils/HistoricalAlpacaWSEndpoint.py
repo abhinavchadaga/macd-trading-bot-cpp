@@ -62,11 +62,26 @@ class HistoricalAlpacaWSEndpoint:
         import subprocess
 
         try:
-            subprocess.run([
-                "openssl", "req", "-x509", "-newkey", "rsa:4096", "-keyout", str(key_file),
-                "-out", str(cert_file), "-days", "365", "-nodes", "-subj",
-                "/C=US/ST=State/L=City/O=Organization/CN=localhost"
-            ], check=True, capture_output=True)
+            subprocess.run(
+                [
+                    "openssl",
+                    "req",
+                    "-x509",
+                    "-newkey",
+                    "rsa:4096",
+                    "-keyout",
+                    str(key_file),
+                    "-out",
+                    str(cert_file),
+                    "-days",
+                    "365",
+                    "-nodes",
+                    "-subj",
+                    "/C=US/ST=State/L=City/O=Organization/CN=localhost",
+                ],
+                check=True,
+                capture_output=True,
+            )
             self._logger.info(f"Generated certificate: {cert_file}")
             self._logger.info(f"Generated key: {key_file}")
         except subprocess.CalledProcessError as e:
@@ -138,8 +153,8 @@ class HistoricalAlpacaWSEndpoint:
         subscribe_msg = json.loads(subscribe_msg)
         cprint.info(f"Received subscribe message: '{subscribe_msg}'")
         assert (
-                subscribe_msg["action"] == "subscribe"
-                and self._symbol in subscribe_msg["bars"]
+            subscribe_msg["action"] == "subscribe"
+            and self._symbol in subscribe_msg["bars"]
         )
 
         # send confirmation of subscription
@@ -175,7 +190,9 @@ class HistoricalAlpacaWSEndpoint:
         await self._stream_bars(websocket)
 
     async def main(self):
-        async with serve(self.run, "localhost", port=8765, ssl=self._ssl_context) as server:
+        async with serve(
+            self.run, "localhost", port=8765, ssl=self._ssl_context
+        ) as server:
             await server.serve_forever()
 
 
@@ -223,7 +240,6 @@ def main():
         if key_file.exists():
             key_file.unlink()
             print(f"Cleaned up key: {key_file}")
-
 
         print("Graceful shutdown complete.")
 

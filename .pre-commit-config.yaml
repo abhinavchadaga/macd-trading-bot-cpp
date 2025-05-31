@@ -7,15 +7,6 @@ repos:
         stages: [commit-msg]
         args: [build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test, optional-scope]
 
-  # C++ formatting and linting
-  - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v19.1.6
-    hooks:
-      - id: clang-format
-        files: \.(c|cc|cxx|cpp|h|hpp|hxx)$
-        exclude: ^third-party/
-        args: [--style=GNU, --fallback-style=GNU]
-
   # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -29,17 +20,33 @@ repos:
       - id: check-added-large-files
         args: [--maxkb=1000]
 
-  # C++ specific linting with clang-tidy
-  - repo: local
+  # C++ formatting and linting
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: 336fdd7c3cab698ead0b1c95157b9e74d3906b62
     hooks:
+      - id: clang-format
+        args: [-i, --style=file, --no-diff]
+        exclude: ^(build/|third-party/)
       - id: clang-tidy
-        name: clang-tidy
-        entry: bash
-        language: system
-        files: \.(c|cc|cxx|cpp|h|hpp|hxx)$
-        exclude: ^third-party/
-        args:
-          - -c
-          - 'if [ -f cmake-build-debug/compile_commands.json ]; then clang-tidy --config-file=.clang-tidy -p cmake-build-debug "$@"; else echo "Warning: No compilation database found, skipping clang-tidy"; fi'
-          - --
-        require_serial: false
+        exclude: ^(build/|third-party/)
+
+  # Python formatting and linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.12
+    hooks:
+      - id: ruff-check
+        args: [ --fix ]
+      - id: ruff-format
+
+  # Bash formatting
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.11.0-1
+    hooks:
+      - id: shfmt
+
+    # Bash linting
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.10.0
+    hooks:
+      - id: shellcheck
+        args: [ "--severity=warning"]

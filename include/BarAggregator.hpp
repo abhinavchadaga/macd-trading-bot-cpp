@@ -1,23 +1,22 @@
 #pragma once
 
-#include "Bar.hpp"
 #include <boost/signals2.hpp>
 #include <optional>
+#include "Bar.hpp"
 
-class BarAggregator
-{
-public:
-  using aggregated_bar_signal_t = boost::signals2::signal<void (const Bar &)>;
+class BarAggregator {
+ public:
+  using aggregated_bar_signal_t = boost::signals2::signal<void(const Bar&)>;
 
-  explicit BarAggregator (int aggregation_minutes = 5);
+  explicit BarAggregator(int aggregation_minutes = 5);
 
-  void on_bar (const Bar &input_bar);
+  void on_bar(const Bar& input_bar);
 
-  boost::signals2::connection connect_aggregated_bar_handler (
-      const aggregated_bar_signal_t::slot_type &handler);
+  boost::signals2::connection connect_aggregated_bar_handler(
+      const aggregated_bar_signal_t::slot_type& handler);
 
-private:
-  void emit_aggregated_bar ();
+ private:
+  void emit_aggregated_bar();
 
   int _aggregation_minutes;
   std::optional<Bar> _current_aggregated_bar{};

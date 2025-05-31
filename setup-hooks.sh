@@ -4,9 +4,9 @@ set -e
 echo "Setting up pre-commit hooks for C++ project..."
 
 # Install pre-commit if not already installed
-if ! command -v pre-commit &> /dev/null; then
-    echo "Installing pre-commit..."
-    pipx install pre-commit
+if ! command -v pre-commit &>/dev/null; then
+	echo "Installing pre-commit..."
+	pipx install pre-commit
 fi
 
 # Install hooks
@@ -17,7 +17,7 @@ pre-commit install --hook-type commit-msg
 # Generate compilation database for clang-tidy
 echo "Generating compilation database..."
 if [ ! -d "cmake-build-debug" ]; then
-    mkdir -p cmake-build-debug
+	mkdir -p cmake-build-debug
 fi
 cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S . -B cmake-build-debug
 
