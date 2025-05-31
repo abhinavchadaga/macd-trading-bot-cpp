@@ -1,8 +1,9 @@
 #pragma once
+
+#include <string_view>
 #include <unordered_map>
 
-struct IndicatorConfig
-{
+struct IndicatorConfig {
   std::string_view name;
   std::unordered_map<std::string, int> params{};
 };
