@@ -19,8 +19,6 @@
         "twxs.cmake",
         "josetr.cmake-language-support-vscode",
         "cheshirekow.cmake-format",
-        // AI
-        "Anthropic.claude-code",
         // PYTHON
         "ms-python.vscode-pylance",
         "charliermarsh.ruff",
@@ -32,7 +30,11 @@
         "mechatroner.rainbow-csv",
         // YAML
         "redhat.vscode-yaml"
-      ]
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "cmake.languageSupport.dotnetPath": "/usr/bin/dotnet"
+      }
     }
   },
   "postCreateCommand": "chmod +x setup-hooks.sh && ./setup-hooks.sh"
