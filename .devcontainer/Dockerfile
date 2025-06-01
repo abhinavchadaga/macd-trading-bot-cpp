@@ -19,7 +19,8 @@ RUN apt-get update && apt-get -y install  \
     curl \
     man-db \
     clangd \
-    clang-tidy
+    clang-tidy \
+    clang-format
 
 # install node
 ENV NVM_DIR=/root/.nvm
