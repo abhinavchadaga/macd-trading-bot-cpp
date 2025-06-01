@@ -16,10 +16,7 @@ pre-commit install --hook-type commit-msg
 
 # Generate compilation database for clang-tidy
 echo "Generating compilation database..."
-if [ ! -d "cmake-build-debug" ]; then
-	mkdir -p cmake-build-debug
-fi
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S . -B cmake-build-debug
+./configure.sh Debug
 
 echo "Setup complete!"
 echo ""
@@ -33,5 +30,3 @@ echo "    Examples: feat: add new trading strategy"
 echo "             fix(websocket): handle connection timeouts"
 echo "             docs: update README"
 echo ""
-echo "Pro tip: To commit with auto-fixes in one step:"
-echo "  git add . && git commit -m 'your message' || (git add . && git commit --amend --no-edit)"

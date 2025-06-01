@@ -40,6 +40,7 @@ fi
 echo "Creating virtual environment..."
 rm -rf venv
 python3 -m venv venv
+# shellcheck disable=SC1091
 source venv/bin/activate
 pip3 install -r requirements.txt
 

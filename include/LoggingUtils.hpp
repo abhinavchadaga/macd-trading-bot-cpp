@@ -1,9 +1,10 @@
 #pragma once
 
-#include "../third-party/easylogging++.h"
+#include "easylogging++.h"
 
-#define CLASS_LOGGER(class_name) \
-  el::Logger* _class_logger = el::Loggers::getLogger(#class_name)
+#define CLASS_LOGGER(class_name)               \
+  [[maybe_unused]] el::Logger* _class_logger = \
+      el::Loggers::getLogger(#class_name)
 
 #define FUNC_LOG(level, class_name, func_name) \
   CLOG(level, "MACDTradingBot")                \
