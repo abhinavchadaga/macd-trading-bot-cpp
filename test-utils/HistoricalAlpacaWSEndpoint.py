@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-WebSocket server that streams historical stock bar data from CSV file.
-Simulates Alpaca WebSocket feed format for backtesting purposes.
-"""
-
 import asyncio
 import csv
 import json
@@ -12,7 +7,7 @@ import ssl
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional, cast
 
 from websockets.asyncio.server import ServerConnection, serve
 from cprint import cprint
@@ -103,7 +98,9 @@ class HistoricalAlpacaWSEndpoint:
 
         self._logger.info(f"Loaded {len(self._bars)} bars")
 
-    def _convert_csv_row_to_alpaca_format(self, row: Dict[str, str]) -> Dict:
+    def _convert_csv_row_to_alpaca_format(
+        self, row: dict[str, str]
+    ) -> dict[str, str | float]:
         """Convert CSV row to Alpaca WebSocket bar format."""
         timestamp_str = row["timestamp"]
         timestamp_rfc3339: Optional[str] = None
@@ -125,7 +122,7 @@ class HistoricalAlpacaWSEndpoint:
             "l": float(row["low"]),
             "c": float(row["close"]),
             "v": float(row["volume"]),
-            "t": timestamp_rfc3339,
+            "t": cast(str, timestamp_rfc3339),
             "n": float(row["trade_count"]),
             "vw": float(row["vwap"]),
         }
@@ -213,7 +210,7 @@ def main():
 
     import signal
 
-    def signal_handler(signum, _):
+    def signal_handler(signum: int, _):
         print(f"Received signal {signum}, shutting down gracefully...")
         raise KeyboardInterrupt
 
