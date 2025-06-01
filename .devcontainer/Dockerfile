@@ -1,5 +1,6 @@
 FROM ubuntu:24.04
 
+# install system packages and deps
 RUN apt-get update && apt-get -y install  \
     build-essential \
     gdb \
@@ -15,4 +16,29 @@ RUN apt-get update && apt-get -y install  \
     python3-venv \
     nlohmann-json3-dev \
     libssl-dev \
-    curl
+    curl \
+    locales
+
+
+# install node
+ENV NVM_DIR=/root/.nvm
+ENV NODE_VERSION="--lts"
+
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+RUN bash -c "source ${NVM_DIR}/nvm.sh && nvm install ${NODE_VERSION} && ln -sf ${NVM_DIR}/versions/node/\$(nvm current)/bin/* /usr/local/bin/"
+
+# install claude code
+RUN npm install -g @anthropic-ai/claude-code
+
+# install pipx
+RUN apt install -y pipx
+RUN pipx ensurepath
+
+# unminimize
+RUN apt-get update -y && \
+DEBIAN_FRONTEND=noninteractive apt-get install -y unminimize \
+&& rm -rf /var/lib/apt/lists/* \
+&& yes | /usr/local/sbin/unminimize
+
+# fix locales
+RUN locale-gen en_US.UTF-8

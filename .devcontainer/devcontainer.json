@@ -1,12 +1,12 @@
 {
-  build: {
-    dockerfile: "./Dockerfile",
-    context: "."
+  "build": {
+    "dockerfile": "./Dockerfile",
+    "context": "."
   },
-  capAdd: [
+  "capAdd": [
     "SYS_PTRACE"
   ],
-  securityOpt: [
+  "securityOpt": [
     "seccomp=unconfined"
   ]
 }
