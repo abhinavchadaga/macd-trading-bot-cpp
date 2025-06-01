@@ -17,8 +17,7 @@ RUN apt-get update && apt-get -y install  \
     nlohmann-json3-dev \
     libssl-dev \
     curl \
-    locales
-
+    man-db
 
 # install node
 ENV NVM_DIR=/root/.nvm
@@ -31,14 +30,20 @@ RUN bash -c "source ${NVM_DIR}/nvm.sh && nvm install ${NODE_VERSION} && ln -sf $
 RUN npm install -g @anthropic-ai/claude-code
 
 # install pipx
-RUN apt install -y pipx
+RUN apt-get install -y pipx
 RUN pipx ensurepath
 
 # unminimize
 RUN apt-get update -y && \
 DEBIAN_FRONTEND=noninteractive apt-get install -y unminimize \
 && rm -rf /var/lib/apt/lists/* \
-&& yes | /usr/local/sbin/unminimize
+&& yes | unminimize
 
 # fix locales
+RUN apt-get install locales
 RUN locale-gen en_US.UTF-8
+
+# install dotnet runtimes for cmake vscode extenstions
+RUN apt-get -y install software-properties-common
+RUN add-apt-repository ppa:dotnet/backports
+RUN apt-get install -y dotnet-sdk-9.0
