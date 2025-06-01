@@ -5,7 +5,21 @@ repos:
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
-        args: [build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test, optional-scope]
+        args:
+          [
+            build,
+            chore,
+            ci,
+            docs,
+            feat,
+            fix,
+            perf,
+            refactor,
+            revert,
+            style,
+            test,
+            optional-scope,
+          ]
 
   # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -35,7 +49,7 @@ repos:
     rev: v0.11.12
     hooks:
       - id: ruff-check
-        args: [ --fix ]
+        args: [--fix]
       - id: ruff-format
 
   # Bash formatting
@@ -44,9 +58,7 @@ repos:
     hooks:
       - id: shfmt
 
-    # Bash linting
-  - repo: https://github.com/koalaman/shellcheck-precommit
-    rev: v0.10.0
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
     hooks:
       - id: shellcheck
-        args: [ "--severity=warning"]
