@@ -4,6 +4,8 @@ add_executable(unit_tests
         TestBarAggregatorIntegration.cpp
         TestBar.cpp
         TestUtils.cpp
+        TestIndicators.cpp
+        TestIndicatorEngine.cpp
 )
 target_link_libraries(unit_tests
         PUBLIC
@@ -12,8 +14,12 @@ target_link_libraries(unit_tests
         WebSocketSession
         AlpacaMarketFeed
         Utils
+        Indicators
         GTest::gtest_main
 )
+
+pkg_check_modules(TALIB REQUIRED IMPORTED_TARGET ta-lib)
+target_link_libraries(unit_tests PUBLIC PkgConfig::TALIB)
 
 target_include_directories(unit_tests
         PUBLIC
