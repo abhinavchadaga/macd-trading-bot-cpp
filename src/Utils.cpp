@@ -2,6 +2,7 @@
 #include "Bar.hpp"
 
 #include <chrono>
+#include <sstream>
 
 Bar1min::Timestamp parseRFC3339UTCTimestamp(const std::string& timestamp) {
   if (!timestamp.ends_with('Z') && !timestamp.ends_with('z')) {
