@@ -6,9 +6,7 @@
 #include <boost/beast/ssl.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/websocket/ssl.hpp>
-#include <chrono>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <queue>
 #include <string>

@@ -1,9 +1,9 @@
-#include "indicators/EMA.hpp"
+#include "indicators/ohlcv/EMA.hpp"
 #include "IndicatorRegistrar.hpp"
 
 #include <stdexcept>
 
-REGISTER_INDICATOR(EMA);
+REGISTER_INDICATOR(EMA, OHLCVIndicator);
 
 EMA::EMA(const std::size_t period)
     : _alpha{static_cast<double>(SMOOTHING_FACTOR) /
@@ -26,7 +26,7 @@ bool EMA::is_ready() const {
   return _n >= _period;
 }
 
-Indicator::Snapshot EMA::read() const {
+OHLCVIndicator::Snapshot EMA::read() const {
   if (!is_ready()) {
     throw std::runtime_error("Not ready");
   }
@@ -34,8 +34,8 @@ Indicator::Snapshot EMA::read() const {
   return {{"ema", _value}};
 }
 
-void EMA::write(const Bar& bar) {
-  write(bar.close());
+void EMA::write(const OHLCV& ohlcv) {
+  write(ohlcv.close);
 }
 
 //

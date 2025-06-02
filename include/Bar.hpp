@@ -5,6 +5,14 @@
 #include <cstddef>
 #include <string>
 
+struct OHLCV {
+  double open{};
+  double high{};
+  double low{};
+  double close{};
+  uint64_t volume{};
+};
+
 template <typename T>
 concept ChronoDuration =
     std::same_as<T, std::chrono::nanoseconds> ||
@@ -25,6 +33,9 @@ class Bar {
   static constexpr int count() { return Count; }
   static constexpr TimeUnit duration() { return TimeUnit{Count}; }
 
+  Bar(std::string symbol, const OHLCV& ohlcv, const Timestamp ts)
+      : _symbol{std::move(symbol)}, _ohlcv{ohlcv}, _timestamp{ts} {}
+
   Bar(std::string symbol,
       const double open,
       const double high,
@@ -33,34 +44,28 @@ class Bar {
       const uint64_t volume,
       const Timestamp ts)
       : _symbol{std::move(symbol)},
-        _open{open},
-        _high{high},
-        _low{low},
-        _close{close},
-        _volume{volume},
+        _ohlcv{open, high, low, close, volume},
         _timestamp{ts} {}
 
   [[nodiscard]] const std::string& symbol() const { return _symbol; }
 
-  [[nodiscard]] double open() const { return _open; }
+  [[nodiscard]] const OHLCV& ohlcv() const { return _ohlcv; }
 
-  [[nodiscard]] double high() const { return _high; }
+  [[nodiscard]] double open() const { return _ohlcv.open; }
 
-  [[nodiscard]] double low() const { return _low; }
+  [[nodiscard]] double high() const { return _ohlcv.high; }
 
-  [[nodiscard]] double close() const { return _close; }
+  [[nodiscard]] double low() const { return _ohlcv.low; }
 
-  [[nodiscard]] uint64_t volume() const { return _volume; }
+  [[nodiscard]] double close() const { return _ohlcv.close; }
+
+  [[nodiscard]] uint64_t volume() const { return _ohlcv.volume; }
 
   [[nodiscard]] Timestamp timestamp() const { return _timestamp; }
 
  private:
   std::string _symbol{};
-  double _open{};
-  double _high{};
-  double _low{};
-  double _close{};
-  uint64_t _volume{};
+  OHLCV _ohlcv{};
   Timestamp _timestamp{};
 };
 

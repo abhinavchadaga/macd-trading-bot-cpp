@@ -1,11 +1,12 @@
 #pragma once
 
 #include "EMA.hpp"
-#include "Indicator.hpp"
+#include "IndicatorConfig.hpp"
+#include "OHLCVIndicator.hpp"
 
 #include <string_view>
 
-class MACD final : public Indicator {
+class MACD final : public OHLCVIndicator {
  public:
   static constexpr std::string_view name{"MACD"};
 
@@ -22,7 +23,7 @@ class MACD final : public Indicator {
 
   [[nodiscard]] Snapshot read() const override;
 
-  void write(const Bar&) override;
+  void write(const OHLCV& ohlcv) override;
 
  private:
   EMA _fast_ema;

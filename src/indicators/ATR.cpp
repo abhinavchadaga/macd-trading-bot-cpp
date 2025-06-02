@@ -1,9 +1,9 @@
-#include "indicators/ATR.hpp"
+#include "indicators/ohlcv/ATR.hpp"
 #include "IndicatorRegistrar.hpp"
 
 #include <stdexcept>
 
-REGISTER_INDICATOR(ATR)
+REGISTER_INDICATOR(ATR, OHLCVIndicator)
 
 ATR::ATR(const std::size_t period) : _period{period} {}
 
@@ -24,24 +24,24 @@ bool ATR::is_ready() const {
   return _n >= _period;
 }
 
-void ATR::write(const Bar& bar) {
+void ATR::write(const OHLCV& ohlcv) {
   if (_prev_close == -1.0) {
-    _prev_close = bar.close();
+    _prev_close = ohlcv.close;
     return;
   }
 
-  const double high{bar.high()};
-  const double low{bar.low()};
+  const double high{ohlcv.high};
+  const double low{ohlcv.low};
   const double tr{calc_tr(high, low, _prev_close)};
   if (!is_ready()) {
     ++_n;
   }
 
   _val = (_val * static_cast<double>(_n - 1) + tr) / static_cast<double>(_n);
-  _prev_close = bar.close();
+  _prev_close = ohlcv.close;
 }
 
-Indicator::Snapshot ATR::read() const {
+OHLCVIndicator::Snapshot ATR::read() const {
   if (!is_ready()) {
     throw std::runtime_error("ATR::read(): no valid ATR data");
   }

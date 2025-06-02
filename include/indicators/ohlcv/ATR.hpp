@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Indicator.hpp"
+#include "IndicatorConfig.hpp"
+#include "OHLCVIndicator.hpp"
 
 #include <cstddef>
 #include <string_view>
 
-class ATR final : public Indicator {
+class ATR final : public OHLCVIndicator {
  public:
   static constexpr std::string_view name{"ATR"};
 
@@ -19,7 +20,7 @@ class ATR final : public Indicator {
 
   [[nodiscard]] Snapshot read() const override;
 
-  void write(const Bar&) override;
+  void write(const OHLCV& ohlcv) override;
 
   //
   // ATR methods

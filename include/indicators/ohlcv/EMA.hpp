@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Indicator.hpp"
+#include "IndicatorConfig.hpp"
+#include "OHLCVIndicator.hpp"
 
 #include <cstddef>
 #include <string_view>
 
-class EMA final : public Indicator {
+class EMA final : public OHLCVIndicator {
  public:
   static constexpr std::size_t SMOOTHING_FACTOR{2};
 
@@ -21,7 +22,7 @@ class EMA final : public Indicator {
 
   [[nodiscard]] Snapshot read() const override;
 
-  void write(const Bar& bar) override;
+  void write(const OHLCV& ohlcv) override;
 
   //
   // EMA methods

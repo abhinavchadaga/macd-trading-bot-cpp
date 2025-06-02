@@ -1,7 +1,7 @@
-#include "indicators/MACD.hpp"
+#include "indicators/ohlcv/MACD.hpp"
 #include "IndicatorRegistrar.hpp"
 
-REGISTER_INDICATOR(MACD);
+REGISTER_INDICATOR(MACD, OHLCVIndicator);
 
 namespace {
 std::size_t extract_period(const IndicatorConfig& config,
@@ -31,9 +31,9 @@ bool MACD::is_ready() const {
   return _slow_ema.is_ready() && _fast_ema.is_ready() && _signal_ema.is_ready();
 }
 
-void MACD::write(const Bar& bar) {
-  _fast_ema.write(bar);
-  _slow_ema.write(bar);
+void MACD::write(const OHLCV& ohlcv) {
+  _fast_ema.write(ohlcv);
+  _slow_ema.write(ohlcv);
 
   if (_fast_ema.is_ready() && _slow_ema.is_ready()) {
     const double fast_ema_value = _fast_ema.read().begin()->second;
@@ -42,7 +42,7 @@ void MACD::write(const Bar& bar) {
   }
 }
 
-Indicator::Snapshot MACD::read() const {
+OHLCVIndicator::Snapshot MACD::read() const {
   const double fast_ema_value = _fast_ema.read().begin()->second;
   const double slow_ema_value = _slow_ema.read().begin()->second;
   const double signal_line = _signal_ema.read().begin()->second;
