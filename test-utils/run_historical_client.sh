@@ -44,22 +44,8 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
 
-CSV_EXISTS=false
-for file in *.csv; do
-	if [ -f "$file" ]; then
-		CSV_EXISTS=true
-		CSV_FILE="$file"
-		break
-	fi
-done
-
-if [ "$CSV_EXISTS" = false ]; then
-	echo "No CSV file found, generating CSV data for PLTR..."
-	python3 HistoricalBarsToCsv.py PLTR 2025-05-19 2025-05-23 --output PLTR_2025-05-19_2025-05-23_1min_market_hours.csv
-	CSV_FILE="PLTR_2025-05-19_2025-05-23_1min_market_hours.csv"
-else
-	echo "CSV file already exists: $CSV_FILE, skipping generation..."
-fi
+python3 HistoricalBarsToCsv.py PLTR 2025-05-19 2025-05-23 --output PLTR_2025-05-19_2025-05-23_1min_market_hours.csv
+CSV_FILE="PLTR_2025-05-19_2025-05-23_1min_market_hours.csv"
 
 echo "Starting historical WebSocket endpoint..."
 python3 HistoricalAlpacaWSEndpoint.py "$CSV_FILE" --delay 0.1 &
