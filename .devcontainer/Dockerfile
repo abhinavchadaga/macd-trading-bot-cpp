@@ -32,6 +32,9 @@ RUN dnf update -y && dnf install -y \
     nodejs \
     # locale stuff
     glibc-langpack-en \
+    # Rust
+    cargo \
+    rust \
     # Modern shell/dev utilities
     zsh \
     bat \

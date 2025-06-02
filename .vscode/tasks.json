@@ -1,0 +1,25 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cmake configure",
+            "type": "shell",
+            "command": [
+                "/root/.cargo/bin/watchexec",
+                "--restart",
+                "--exts",
+                "txt",
+                "--filter",
+                "*CMakeLists.txt",
+                "--",
+                "bash",
+                "./configure.sh"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        }
+    ]
+}
