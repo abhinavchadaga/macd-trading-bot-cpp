@@ -2,11 +2,13 @@
 #include <chrono>
 #include "Bar.hpp"
 
+#define START_TIME 1000
+
 using namespace std::chrono;
 
 class BarTest : public ::testing::Test {
  protected:
-  void SetUp() override { base_time = sys_time<minutes>{minutes{1000}}; }
+  void SetUp() override { base_time = sys_time<minutes>{minutes{START_TIME}}; }
 
   sys_time<minutes> base_time;
 };
