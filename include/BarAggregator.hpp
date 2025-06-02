@@ -41,6 +41,9 @@ template <std::size_t Count, ChronoDuration TimeUnit>
 inline void BarAggregator<Count, TimeUnit>::on_bar(const Bar1min& input_bar) {
   constexpr auto target_duration = AggregatedBar::duration();
   constexpr auto input_duration = Bar1min::duration();
+  static_assert(target_duration.count() % input_duration.count() == 0,
+                "target_duration must be evenly divisible by "
+                "input_duration");
   constexpr int bars_needed = target_duration / input_duration;
 
   if (_last_input_bar.has_value()) {
