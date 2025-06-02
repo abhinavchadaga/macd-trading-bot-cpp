@@ -3,6 +3,7 @@ add_executable(unit_tests
         TestAlpacaWSMarketFeed.cpp
         TestBarAggregatorIntegration.cpp
         TestBar.cpp
+        TestUtils.cpp
 )
 target_link_libraries(unit_tests
         PUBLIC
