@@ -7,16 +7,23 @@
 #include <vector>
 
 Bar1min::Timestamp parseRFC3339UTCTimestamp(const std::string& timestamp) {
-  if (!timestamp.ends_with('Z') && !timestamp.ends_with('z')) {
-    throw std::invalid_argument{"timestamp must be UTC (end with 'Z')"};
-  }
-
   std::chrono::sys_seconds tp{};
   std::istringstream ss{timestamp};
-  std::chrono::from_stream(ss, "%Y-%m-%dT%H:%M:%SZ", tp);
+
+  // Try different UTC formats
+  if (timestamp.ends_with('Z') || timestamp.ends_with('z')) {
+    // Format: 2025-05-19T13:30:00Z
+    std::chrono::from_stream(ss, "%Y-%m-%dT%H:%M:%SZ", tp);
+  } else if (timestamp.ends_with("+00:00")) {
+    // Format: 2025-05-19 13:30:00+00:00 (space instead of T)
+    std::chrono::from_stream(ss, "%Y-%m-%d %H:%M:%S+00:00", tp);
+  } else {
+    throw std::invalid_argument{
+        "timestamp must be UTC (end with 'Z' or '+00:00')"};
+  }
 
   if (ss.fail()) {
-    throw std::invalid_argument{"Malformed timestamp"};
+    throw std::invalid_argument{"Malformed timestamp: " + timestamp};
   }
 
   return std::chrono::time_point_cast<std::chrono::minutes>(tp);

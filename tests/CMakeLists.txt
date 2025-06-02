@@ -5,6 +5,7 @@ add_executable(unit_tests
         TestBar.cpp
         TestUtils.cpp
         TestIndicators.cpp
+        TestIndicatorEngine.cpp
 )
 target_link_libraries(unit_tests
         PUBLIC
