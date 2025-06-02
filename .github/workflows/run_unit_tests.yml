@@ -19,10 +19,10 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake build-essential libssl-dev libboost-all-dev nlohmann-json3-dev libgtest-dev ninja-build
+        sudo apt-get install -y cmake clang build-essential libssl-dev libboost-all-dev nlohmann-json3-dev libgtest-dev ninja-build
 
     - name: Configure CMake
-      run: cmake -S . -B build/Release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_COMPILER=clang
+      run: cmake -S . -B build/Release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
 
     - name: Build project
       run: cmake --build build/Release
