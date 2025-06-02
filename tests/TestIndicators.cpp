@@ -2,12 +2,11 @@
 #include <ta-lib/ta_libc.h>
 
 #include "Bar.hpp"
-#include "indicators/ATR.hpp"
-#include "indicators/EMA.hpp"
-#include "indicators/MACD.hpp"
+#include "indicators/ohlcv/ATR.hpp"
+#include "indicators/ohlcv/EMA.hpp"
+#include "indicators/ohlcv/MACD.hpp"
 
 #include <array>
-#include <chrono>
 #include <vector>
 
 class IndicatorTest : public ::testing::Test {
@@ -19,7 +18,7 @@ class IndicatorTest : public ::testing::Test {
 
   void TearDown() override { TA_Shutdown(); }
 
-  static std::vector<Bar> createTestBars() {
+  static std::vector<OHLCV> createTestData() {
     // open, high, low, close
     const std::vector<std::array<double, 4> > test_data{
         {100.0, 102.0, 99.0, 101.0},  {101.0, 104.0, 100.0, 103.0},
@@ -33,15 +32,13 @@ class IndicatorTest : public ::testing::Test {
         {117.0, 119.0, 116.0, 118.0}, {118.0, 120.0, 117.0, 119.0},
         {119.0, 121.0, 118.0, 120.0}, {120.0, 122.0, 119.0, 121.0}};
 
-    std::vector<Bar> bars{};
-    auto time_now = std::chrono::system_clock::now();
+    std::vector<OHLCV> ohlcv_data{};
+    ohlcv_data.reserve(test_data.size());
     for (const auto& data : test_data) {
-      bars.emplace_back("TEST", data[0], data[1], data[2], data[3], 1000,
-                        time_now);
-      time_now += std::chrono::minutes(1);
+      ohlcv_data.emplace_back(data[0], data[1], data[2], data[3], 1000);
     }
 
-    return bars;
+    return ohlcv_data;
   }
 
   static void logComparison(const std::string& indicator,
@@ -61,13 +58,13 @@ TEST_F(IndicatorTest, EMA_CompareWithTALib) {
   constexpr std::size_t period{10};
   constexpr double threshold{0.001};
 
-  const auto bars{createTestBars()};
+  const auto ohlcv_data{createTestData()};
   EMA my_ema{period};
 
   std::vector<double> close_prices{};
-  for (const auto& bar : bars) {
-    close_prices.push_back(bar.close());
-    my_ema.write(bar);
+  for (const auto& ohlcv : ohlcv_data) {
+    close_prices.push_back(ohlcv.close);
+    my_ema.write(ohlcv);
   }
 
   std::vector<double> talib_ema(close_prices.size());
@@ -94,15 +91,15 @@ TEST_F(IndicatorTest, ATR_CompareWithTALib) {
   constexpr int period{14};
   constexpr double threshold{0.001};
 
-  const auto bars{createTestBars()};
+  const auto ohlcv_data{createTestData()};
   ATR my_atr{period};
 
   std::vector<double> high_prices, low_prices, close_prices;
-  for (const auto& bar : bars) {
-    high_prices.push_back(bar.high());
-    low_prices.push_back(bar.low());
-    close_prices.push_back(bar.close());
-    my_atr.write(bar);
+  for (const auto& ohlcv : ohlcv_data) {
+    high_prices.push_back(ohlcv.high);
+    low_prices.push_back(ohlcv.low);
+    close_prices.push_back(ohlcv.close);
+    my_atr.write(ohlcv);
   }
 
   // Calculate TA-Lib ATR
@@ -133,13 +130,13 @@ TEST_F(IndicatorTest, MACD_CompareWithTALib) {
   constexpr int signal_period{2};
   constexpr double threshold{0.01};
 
-  const auto bars{createTestBars()};
+  const auto ohlcv_data{createTestData()};
   MACD my_macd{fast_period, slow_period, signal_period};
 
   std::vector<double> close_prices;
-  for (const auto& bar : bars) {
-    close_prices.push_back(bar.close());
-    my_macd.write(bar);
+  for (const auto& ohlcv : ohlcv_data) {
+    close_prices.push_back(ohlcv.close);
+    my_macd.write(ohlcv);
   }
 
   std::vector<double> talib_macd(close_prices.size());
