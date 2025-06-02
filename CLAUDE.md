@@ -4,70 +4,84 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A C++20 MACD trading bot that uses the Alpaca Trading API to automatically trade based on technical indicators. The bot
+A C++23 MACD trading bot that uses the Alpaca Trading API to automatically trade based on technical indicators. The bot
 follows a single-threaded, event-driven Reactor pattern inspired by Virtu Financial's architecture.
 
 ### Trading Strategy
 
-- **Entry**: MACD crossover above signal line when below zero, close price > EMA_200, low volatility (ATR check)
+- **Entry**: MACD line crosses above signal line while below zero, close price > EMA_200, low volatility (ATR/close < threshold)
 - **Exit**: MACD crosses below signal line OR close price < EMA_200
 - **Risk Management**: Stop loss at entry_price - (1.5 * ATR)
+- **Position Management**: Closes positions 15 minutes before market close to stay flat overnight
 
 ## Build System
 
-This project uses CMake with FetchContent to manage dependencies:
+Use the provided shell scripts for building:
 
 ```bash
-# Configure and build
-mkdir build && cd build
-cmake ..
-make
+# Configure build (default: Debug, uses GCC toolchain)
+./configure.sh [Debug|Release]
 
-# Run from build directory
-./src/main                    # Main trading bot
-./src/examples/daytime_server # Example WebSocket server
+# Build project (default: Debug build, all targets)
+./build.sh [Debug|Release] [target]
+
+# Examples:
+./build.sh Debug unit_tests    # Build only tests
+./build.sh Release            # Build release version
 ```
+
+**Manual CMake approach:**
+```bash
+cmake -S . -B build/Debug -GNinja -DCMAKE_TOOLCHAIN_FILE=cmake/linux-gcc.cmake
+cmake --build build/Debug
+```
+
+## Testing
+
+Run tests using:
+
+```bash
+./build.sh Debug unit_tests
+./build/Debug/tests/unit_tests
+```
+
+Tests use Google Test framework and cover:
+- WebSocket session management
+- Alpaca market feed integration  
+- Bar aggregation logic
 
 ## Dependencies
 
-- **Boost** (asio, beast, system): Networking and WebSocket support
+- **Boost** (system): Networking support
+- **OpenSSL**: TLS/SSL for secure connections
 - **nlohmann/json**: JSON parsing for API responses
-- **C++20**: Modern C++ features required
+- **Google Test**: Unit testing framework
+- **C++23**: Modern C++ features required
 
-All dependencies are automatically fetched via CMake FetchContent.
+Dependencies are managed via vcpkg/Conan (find_package in CMake).
 
 ## Architecture
 
 The bot operates as a single-threaded event loop processing:
 
-1. Real-time market data via WebSocket (1-minute candles → 5-minute aggregation)
+1. Real-time market data via WebSocket (1-minute candles → 5-minute aggregation via BarAggregator)
 2. Technical indicator calculations (MACD, EMA_200, ATR)
 3. Strategy decisions (BUY/SELL/NO_ACTION)
 4. Order execution and position tracking via Alpaca API
 
-Key design principle: Components should be mockable for backtesting (Live vs Historical data streams, Live vs Mock
-trading clients).
+**Key Components:**
+- `AlpacaWSMarketFeed`: WebSocket client for Alpaca market data
+- `BarAggregator`: Consolidates 1-minute bars into 5-minute bars
+- `WebSocketSession`: Generic WebSocket session management
+- `LoggingUtils`: Centralized logging using easylogging++
 
-## File Structure
+**Design Principle:** Components should be mockable for backtesting (Live vs Historical data streams, Live vs Mock trading clients).
 
-- `src/': impleme
-- `tests/`: Test directory (currently empty)
+## Coding Standards
 
-## Testing
-
-Tests are built as a separate target:
-
-```bash
-# From build directory
-make tests  # Build tests (excluded from default build)
-# No test runner specified yet - check project status
-```
-
-## Coding Standards:
-
-1. Use Object Oriented C++20
-2. Format your code using clang-format's GNU preset
-3. Use "_" as a prefix for instance variables
+1. Use Object Oriented C++23
+2. Format code using clang-format's GNU preset
+3. Use "_" prefix for instance variables
 4. Use default initialization for instance members whenever possible
 5. Prefer braced initialization over parentheses
-6. Never leave inline comments - the code should be "self-documenting" through descriptive function and variable names 
+6. Never leave inline comments - code should be self-documenting through descriptive function and variable names 
