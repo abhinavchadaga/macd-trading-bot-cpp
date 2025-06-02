@@ -72,4 +72,14 @@ RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh && \
 # Install file watcher for cmake configure task
 RUN cargo install --locked watchexec-cli
 
+# Install TA-Lib from source
+RUN wget https://github.com/ta-lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-src.tar.gz && \
+    tar -xzf ta-lib-0.6.4-src.tar.gz && \
+    cd ta-lib-0.6.4 && \
+    ./configure && \
+    make -j $(nproc) && \
+    make install
+
+ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+
 WORKDIR /workspaces
