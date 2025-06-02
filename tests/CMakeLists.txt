@@ -2,6 +2,7 @@ add_executable(unit_tests
         TestWebSocketSession.cpp
         TestAlpacaWSMarketFeed.cpp
         TestBarAggregatorIntegration.cpp
+        TestBar.cpp
 )
 target_link_libraries(unit_tests
         PUBLIC
@@ -9,7 +10,7 @@ target_link_libraries(unit_tests
         LoggingUtils
         WebSocketSession
         AlpacaMarketFeed
-        BarAggregator
+        Utils
         GTest::gtest_main
 )
 

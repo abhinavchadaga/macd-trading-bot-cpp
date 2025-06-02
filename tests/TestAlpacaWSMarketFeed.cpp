@@ -8,6 +8,7 @@
 #include <sstream>
 #include <thread>
 #include "AlpacaWSMarketFeed.hpp"
+#include "Bar.hpp"
 #include "LoggingUtils.hpp"
 
 class AlpacaWSMarketFeedTest : public ::testing::Test {
@@ -25,7 +26,7 @@ class AlpacaWSMarketFeedTest : public ::testing::Test {
 TEST_F(AlpacaWSMarketFeedTest, ConnectsToFAKEPACAStream) {
   std::atomic received_bar{false};
   std::atomic bar_count{0};
-  Bar latest_bar{"", 0, 0, 0, 0, 0, {}};
+  Bar1min latest_bar{"", 0, 0, 0, 0, 0, {}};
 
   const char* api_key = std::getenv("ALPACA_API_KEY");
   const char* api_secret = std::getenv("ALPACA_API_SECRET");
@@ -40,7 +41,7 @@ TEST_F(AlpacaWSMarketFeedTest, ConnectsToFAKEPACAStream) {
 
   AlpacaWSMarketFeed feed{*_ioc, config};
 
-  auto connection = feed.connect_bar_handler([&](const Bar& b) {
+  auto connection = feed.connect_bar_handler([&](const Bar1min& b) {
     latest_bar = b;
     received_bar = true;
     ++bar_count;
@@ -85,8 +86,7 @@ TEST_F(AlpacaWSMarketFeedTest, HistoricalDataFeedTest) {
   std::atomic received_bars{0};
   std::vector<std::string> bar_strings;
 
-  const std::string script_path =
-      "../../../test-utils/run_historical_client.sh";
+  const std::string script_path = "test-utils/run_historical_client.sh";
 
   if (!std::filesystem::exists(script_path)) {
     GTEST_FAIL() << "Script not found: " << script_path;
@@ -109,7 +109,7 @@ TEST_F(AlpacaWSMarketFeedTest, HistoricalDataFeedTest) {
 
   AlpacaWSMarketFeed feed{*_ioc, config};
 
-  auto connection = feed.connect_bar_handler([&](const Bar& b) {
+  auto connection = feed.connect_bar_handler([&](const Bar1min& b) {
     ++received_bars;
 
     std::stringstream ss;
