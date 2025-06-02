@@ -14,7 +14,8 @@ namespace fs = std::filesystem;
 class WebSocketSessionTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    std::string script_path = "../../../test-utils/start-websocat-echo.sh";
+    std::cout << std::filesystem::current_path() << std::endl;
+    std::string script_path = "test-utils/start-websocat-echo.sh";
     if (!fs::exists(script_path))
       GTEST_SKIP() << "websocat setup script not found: " << script_path;
 
@@ -28,10 +29,7 @@ class WebSocketSessionTest : public ::testing::Test {
   }
 
   void TearDown() override {
-    std::string script_path = "../tests/start-websocat-echo.sh";
-    if (!fs::exists(script_path)) {
-      script_path = "tests/start-websocat-echo.sh";
-    }
+    std::string script_path = "test-utils/start-websocat-echo.sh";
     if (fs::exists(script_path)) {
       const std::string stop_cmd = script_path + " stop";
       std::system(stop_cmd.c_str());

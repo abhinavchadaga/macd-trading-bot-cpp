@@ -13,7 +13,7 @@ namespace ssl = asio::ssl;
 
 class AlpacaWSMarketFeed {
  public:
-  using bar_signal_t = boost::signals2::signal<void(const Bar&)>;
+  using bar_signal_t = boost::signals2::signal<void(const Bar1min&)>;
 
   struct config {
     std::string api_key{};
@@ -50,12 +50,12 @@ class AlpacaWSMarketFeed {
   void parse_bar_message(const nlohmann::json& message);
 
   asio::io_context& _ioc;
-  config _config;
+  config _config{};
   ssl::context _ssl_context;
-  std::shared_ptr<WebSocketSession> _ws_session;
+  std::shared_ptr<WebSocketSession> _ws_session{};
 
-  bar_signal_t _bar_signal;
-  std::vector<std::string> _subscribed_symbols;
+  bar_signal_t _bar_signal{};
+  std::vector<std::string> _subscribed_symbols{};
   bool _authenticated{false};
   bool _subscribed{false};
 };

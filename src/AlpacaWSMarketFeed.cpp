@@ -1,9 +1,8 @@
 #include "AlpacaWSMarketFeed.hpp"
-#include <iomanip>
 #include <sstream>
+#include "Bar.hpp"
 #include "LoggingUtils.hpp"
-
-INITIALIZE_EASYLOGGINGPP
+#include "Utils.hpp"
 
 AlpacaWSMarketFeed::AlpacaWSMarketFeed(asio::io_context& ioc, config cfg)
     : _ioc{ioc},
@@ -15,8 +14,8 @@ AlpacaWSMarketFeed::AlpacaWSMarketFeed(asio::io_context& ioc, config cfg)
 }
 
 void AlpacaWSMarketFeed::start() {
-  std::string host;
-  std::string port;
+  std::string host{};
+  std::string port{};
 
   if (!_config.host.empty()) {
     host = _config.host;
@@ -155,24 +154,9 @@ void AlpacaWSMarketFeed::parse_bar_message(const nlohmann::json& message) {
     const uint64_t volume = message["v"];
     const std::string timestamp_str = message["t"];
 
-    // Parse ISO 8601 timestamp like "2021-02-22T19:15:00Z"
-    std::istringstream ss(timestamp_str);
-    std::tm tm{};
-    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-
-    if (ss.fail()) {
-      throw std::runtime_error("Failed to parse timestamp: " + timestamp_str);
-    }
-
-    // Convert to time_t and then to system_clock time_point
-    std::time_t time_t_val = std::mktime(&tm);
-    auto time_point = std::chrono::system_clock::from_time_t(time_t_val);
-    auto timestamp =
-        std::chrono::time_point_cast<std::chrono::nanoseconds>(time_point);
-
-    Bar new_bar{symbol, open, high, low, close, volume, timestamp};
-
-    _bar_signal(new_bar);
+    Bar1min::Timestamp timestamp{parseRFC3339UTCTimestamp(timestamp_str)};
+    Bar1min newBar{symbol, open, high, low, close, volume, timestamp};
+    _bar_signal(newBar);
   } catch (const std::exception& e) {
     LOG_ERROR(AlpacaWSMarketFeed, parse_bar_message)
         << "Error parsing bar message: " << e.what();

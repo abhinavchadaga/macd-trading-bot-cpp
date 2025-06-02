@@ -10,8 +10,7 @@ target_link_libraries(WebSocketSession
         LoggingUtils
 )
 
-add_library(AlpacaMarketFeed OBJECT AlpacaWSMarketFeed.cpp)
-target_link_libraries(AlpacaMarketFeed PUBLIC WebSocketSession nlohmann_json::nlohmann_json)
+add_library(Utils OBJECT Utils.cpp)
 
-add_library(BarAggregator OBJECT BarAggregator.cpp)
-target_link_libraries(BarAggregator PUBLIC Boost::system)
+add_library(AlpacaMarketFeed OBJECT AlpacaWSMarketFeed.cpp)
+target_link_libraries(AlpacaMarketFeed PUBLIC WebSocketSession nlohmann_json::nlohmann_json Utils)
