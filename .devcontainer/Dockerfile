@@ -22,6 +22,7 @@ RUN dnf update -y && dnf install -y \
     perl-FindBin \
     perl-IPC-Cmd \
     openssl-devel \
+    openssl \
     # Python tools
     python3-devel \
     python3-pip \
@@ -64,5 +65,8 @@ RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh && \
     chmod +x dotnet-install.sh && \
     ./dotnet-install.sh --runtime dotnet --channel 6.0 && \
     rm -rf ./dotnet-install.sh
+
+# Install file watcher for cmake configure task
+RUN cargo install --locked watchexec-cli
 
 WORKDIR /workspaces
