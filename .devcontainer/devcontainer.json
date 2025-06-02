@@ -29,11 +29,13 @@
         // CSH
         "mechatroner.rainbow-csv",
         // YAML
-        "redhat.vscode-yaml"
+        "redhat.vscode-yaml",
+        // CONTAINER TOOLS
+        "ms-azuretools.vscode-containers"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
-        "cmake.languageSupport.dotnetPath": "/usr/bin/dotnet"
+        "cmake.languageSupport.dotnetPath": "/root/.dotnet/dotnet"
       }
     }
   },
