@@ -34,20 +34,9 @@ protected:
   static void
   start_historical_script()
   {
-    const std::string script_path = "test-utils/run_historical_client.sh";
-
-    if (!std::filesystem::exists(script_path))
-      {
-        GTEST_FAIL() << "Script not found: " << script_path;
-      }
-
-    std::ostringstream start_cmd;
-    start_cmd << script_path << " &";
-
-    if (const int result = std::system(start_cmd.str().c_str()); result != 0)
-      {
-        GTEST_FAIL() << "Failed to start historical client script";
-      }
+    const std::string start_cmd
+      = "run_historical_client PLTR 2025-05-19 2025-05-23 &";
+    std::system(start_cmd.c_str());
 
     std::this_thread::sleep_for(std::chrono::seconds(3));
   }
@@ -55,7 +44,7 @@ protected:
   static void
   cleanup_historical_script()
   {
-    std::system("pkill -f run_historical_client.sh || true");
+    std::system("pkill -f run_historical_client || true");
     std::this_thread::sleep_for(std::chrono::seconds(3));
   }
 

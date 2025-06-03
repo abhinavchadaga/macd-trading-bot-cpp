@@ -27,6 +27,7 @@ def fetch_historical_data(
     end_date: str,
     output_file: Optional[str] = None,
     market_hours_only: bool = True,
+    limit: Optional[int] = None,
 ) -> None:
     """Fetch historical 1-minute bar data and save to CSV."""
 
@@ -73,6 +74,10 @@ def fetch_historical_data(
         cprint.warn("No data found after filtering.")
         return
 
+    if limit is not None and limit > 0:
+        df = df.head(limit)
+        cprint.info(f"Limited to first {limit} bars")
+
     if output_file is None:
         hours_suffix = "_market_hours" if market_hours_only else "_all_hours"
         output_file = f"{symbol}_{start_date}_{end_date}_1min{hours_suffix}.csv"
@@ -95,6 +100,11 @@ def main() -> None:
         action="store_true",
         help="Include pre-market and after-hours data (default: market hours only)",
     )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="Limit the number of bars returned (useful for testing)",
+    )
 
     args = parser.parse_args()
     market_hours_only = not args.include_extended_hours
@@ -106,6 +116,7 @@ def main() -> None:
             args.end_date,
             args.output,
             market_hours_only,
+            args.limit,
         )
     except Exception as e:
         cprint.fatal(f"Error: {e}", interrupt=True)

@@ -2,9 +2,9 @@ name: Run Unit Tests
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [master]
   push:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   test:
@@ -33,9 +33,13 @@ jobs:
       - name: Configure CMake
         run: cmake -S . -B build/Release -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
 
+      - name: Install python-utils
+        run: |
+          chmod +x ./test-utils/install.sh
+          ./test-utils/install.sh
+
       - name: Build project
-        run: cmake --build build/Release
+        run: cmake --build build/Release --target unit_tests
 
       - name: Run all unit tests
-        run: |
-          build/Release/tests/unit_tests
+        run: ./build/Release/tests/unit_tests

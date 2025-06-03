@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# configure cmake
+
 buildType=$1
 
 if [[ -z $1 ]]; then

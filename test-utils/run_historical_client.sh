@@ -3,7 +3,20 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR/.."
+
+# Parse command line arguments
+SYMBOL="${1:-PLTR}"
+START_DATE="${2:-2025-05-19}"
+END_DATE="${3:-2025-05-23}"
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "Usage: $0 [symbol] [start_date] [end_date]"
+	echo "  symbol:     Stock symbol (default: PLTR)"
+	echo "  start_date: Start date in YYYY-MM-DD format (default: 2025-05-19)"
+	echo "  end_date:   End date in YYYY-MM-DD format (default: 2025-05-23)"
+	exit 0
+fi
 
 PYTHON_PID=""
 
@@ -37,18 +50,11 @@ if [ -n "$PORT_PID" ]; then
 	sleep 1
 fi
 
-echo "Creating virtual environment..."
-rm -rf venv
-python3 -m venv venv
-# shellcheck disable=SC1091
-source venv/bin/activate
-pip3 install -r requirements.txt
-
-python3 HistoricalBarsToCsv.py PLTR 2025-05-19 2025-05-23 --output PLTR_2025-05-19_2025-05-23_1min_market_hours.csv
-CSV_FILE="PLTR_2025-05-19_2025-05-23_1min_market_hours.csv"
+CSV_FILE="/tmp/${SYMBOL}_${START_DATE}_${END_DATE}_1min_market_hours.csv"
+historical_bars_to_csv "$SYMBOL" "$START_DATE" "$END_DATE" --output "${CSV_FILE}"
 
 echo "Starting historical WebSocket endpoint..."
-python3 HistoricalAlpacaWSEndpoint.py "$CSV_FILE" --delay 0.1 &
+historical_alpaca_ws_endpoint "$CSV_FILE" --delay 0.1 &
 PYTHON_PID=$!
 
 echo "Python process started with PID: $PYTHON_PID"

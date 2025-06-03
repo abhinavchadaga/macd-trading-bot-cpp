@@ -103,20 +103,8 @@ TEST_F(AlpacaWSMarketFeedTest, HistoricalDataFeedTest)
   std::atomic              received_bars { 0 };
   std::vector<std::string> bar_strings;
 
-  const std::string script_path = "test-utils/run_historical_client.sh";
-
-  if (!std::filesystem::exists(script_path))
-    {
-      GTEST_FAIL() << "Script not found: " << script_path;
-    }
-
-  std::ostringstream start_cmd;
-  start_cmd << script_path << " &";
-
-  if (const int result = std::system(start_cmd.str().c_str()); result != 0)
-    {
-      GTEST_FAIL() << "Failed to start historical client script";
-    }
+  const std::string cmd = "run_historical_client PLTR 2025-05-19 2025-05-23 &";
+  std::system(cmd.c_str());
 
   std::this_thread::sleep_for(std::chrono::seconds(3));
 

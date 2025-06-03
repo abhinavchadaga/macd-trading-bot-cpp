@@ -19,6 +19,7 @@ repos:
             style,
             test,
             optional-scope,
+            dev,
           ]
 
   # General hooks
