@@ -3,9 +3,6 @@
 #include "IndicatorConfig.hpp"
 #include "IndicatorEngine.hpp"
 #include "Utils.hpp"
-#include "indicators/ohlcv/ATR.hpp"
-#include "indicators/ohlcv/EMA.hpp"
-#include "indicators/ohlcv/MACD.hpp"
 
 #include <cstdlib>
 #include <filesystem>
@@ -60,7 +57,6 @@ protected:
     indicator_engine->on_bar(bar);
     aggregated_bar_count++;
 
-    // Track when indicators become ready
     if (indicator_engine->is_ready() && !indicators_ready)
       {
         indicators_ready = true;
@@ -93,7 +89,7 @@ TEST_F(
 {
   std::string csv_path = "/tmp/pltr_one_day_data.csv";
   std::string cmd {
-    "build/python-utils/historical_bars_to_csv PLTR 2025-05-30 "
+    "historical_bars_to_csv PLTR 2025-05-30 "
     "2025-05-31 --output "
     + csv_path
   };
@@ -104,50 +100,13 @@ TEST_F(
   auto input_bars = createBarsFromCSV(csv_path);
   ASSERT_GT(input_bars.size(), 0) << "No bars loaded from CSV";
 
-  // Process bars through the pipeline, handling gaps gracefully
   int processed_bars = 0;
   int skipped_bars   = 0;
 
   for (const auto &bar : input_bars)
     {
-      try
-        {
-          bar_aggregator->on_bar(bar);
-          processed_bars++;
-        }
-      catch (const std::runtime_error &e)
-        {
-          // Handle gaps in data (weekends, holidays, non-consecutive bars)
-          if (
-            std::string(e.what()).find(
-              "timestamp does not match expected sequence")
-            != std::string::npos)
-            {
-              skipped_bars++;
-              // Reset aggregator for new sequence
-              bar_aggregator
-                = std::make_unique<BarAggregator<5, std::chrono::minutes>>();
-              aggregator_connection
-                = bar_aggregator->connect_aggregated_bar_handler(
-                  [this](const Bar5min &aggregated_bar) {
-                    this->on_aggregated_bar(aggregated_bar);
-                  });
-              // Try this bar again with fresh aggregator
-              try
-                {
-                  bar_aggregator->on_bar(bar);
-                  processed_bars++;
-                }
-              catch (...)
-                {
-                  skipped_bars++;
-                }
-            }
-          else
-            {
-              throw; // Re-throw unexpected errors
-            }
-        }
+      bar_aggregator->on_bar(bar);
+      processed_bars++;
     }
 
   std::cout << "Processed " << processed_bars << " bars, skipped "

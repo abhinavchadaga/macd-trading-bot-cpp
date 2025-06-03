@@ -13,28 +13,30 @@ class UtilsTest : public ::testing::Test
 {
 protected:
 
-  void
-  SetUp() override
+  static void
+  SetUpTestSuite()
   {
     test_csv_file_path = "/tmp/test_bars_utils.csv";
 
     // Generate test data using the Python executable
     std::string command
-      = "./build/python-utils/historical_bars_to_csv PLTR 2024-01-02 "
+      = "historical_bars_to_csv PLTR 2024-01-02 "
         "2024-01-03 --limit 10 --output "
       + test_csv_file_path;
     int result = std::system(command.c_str());
     ASSERT_EQ(result, 0) << "Failed to generate test CSV data";
   }
 
-  void
-  TearDown() override
+  static void
+  TearDownTestSuite()
   {
     std::remove(test_csv_file_path.c_str());
   }
 
-  std::string test_csv_file_path;
+  static std::string test_csv_file_path;
 };
+
+std::string UtilsTest::test_csv_file_path;
 
 TEST_F(UtilsTest, ParseRFC3339UTCTimestamp)
 {

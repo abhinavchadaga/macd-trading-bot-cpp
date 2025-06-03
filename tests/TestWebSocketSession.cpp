@@ -19,30 +19,18 @@ protected:
   void
   SetUp() override
   {
-    std::cout << std::filesystem::current_path() << std::endl;
-    std::string script_path = "test-utils/start-websocat-echo.sh";
-    if (!fs::exists(script_path))
-      GTEST_SKIP() << "websocat setup script not found: " << script_path;
-
-    const std::string start_cmd = script_path + " start";
-    if (const int result = std::system(start_cmd.c_str()); result != 0)
-      {
-        GTEST_SKIP() << "Failed to start websocat server";
-      }
-
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    const std::string start_cmd = "start_websocat_echo start";
+    std::system(start_cmd.c_str());
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     std::cout << "websocat server should be ready now" << std::endl;
   }
 
   void
   TearDown() override
   {
-    std::string script_path = "test-utils/start-websocat-echo.sh";
-    if (fs::exists(script_path))
-      {
-        const std::string stop_cmd = script_path + " stop";
-        std::system(stop_cmd.c_str());
-      }
+    const std::string stop_cmd = "start_websocat_echo stop";
+    std::system(stop_cmd.c_str());
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     std::system("pkill -f websocat || true");
   }
 };
@@ -56,7 +44,7 @@ TEST_F(WebSocketSessionTest, EchoRoundTrip)
   std::promise<std::string> got;
   auto                      fut = got.get_future();
 
-  const WebSocketSessionConfig config { .host     = "127.0.0.1",
+  const WebSocketSessionConfig config { .host     = "localhost",
                                         .port     = "9001",
                                         .endpoint = "/",
                                         .auth_msg = "",
