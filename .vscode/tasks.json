@@ -15,10 +15,50 @@
                 "bash",
                 "./configure.sh"
             ],
+            "isBackground": true,
             "problemMatcher": [],
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
+            }
+        },
+        {
+            "label": "build python-utils",
+            "type": "shell",
+            "command": [
+                "/root/.cargo/bin/watchexec",
+                "--restart",
+                "--exts",
+                "py",
+                "-W",
+                "test-utils",
+                "--",
+                "bash",
+                "test-utils/build_py_utils.sh"
+            ],
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "cmake build",
+            "type": "shell",
+            "command": [
+                "bash",
+                "./build.sh"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "close": true
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
             }
         }
     ]
