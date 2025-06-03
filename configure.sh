@@ -47,29 +47,37 @@ function has_changed() {
 
 function build_python_test_utils() {
 	local script_path=$1
+	current_dir=$(pwd)
 	if has_changed "$script_path"; then
 		echo "Building $script_path"
 		local script_dir
 		script_dir=$(dirname "$script_path")
+
+		cd "$script_dir" || return
 		local script_name
 		script_name=$(basename "$script_path")
 		local output_name="${script_name%.py}"
-		local output_dir="build/python-utils"
+		local output_dir="$current_dir/build/python-utils"
 		local output_path="${output_dir}/${output_name}"
 		if [[ -f $output_path ]]; then
 			rm "$output_path"
 		fi
 
 		# shellcheck disable=SC1091
-		source "$script_dir/venv/bin/activate"
-		python3 -m pip install pyinstaller --quiet --upgrade
-
-		build_cmd="pyinstaller --onefile --clean --specpath /tmp --workpath /tmp --noconfirm --log-level FATAL --distpath $output_dir $script_path 2>/dev/null"
-		if ! eval "$build_cmd"; then
-			deactivate
-			echo "Failed to build $script_path"
+		source venv/bin/activate || {
+			echo "Failed to activate virtual environment"
 			exit 1
-		fi
+		}
+		PYINSTALLER_ARGS=(
+			--onefile --clean --specpath /tmp
+			--workpath /tmp --noconfirm
+			--log-level FATAL --distpath "$output_dir"
+		)
+		pyinstaller "${PYINSTALLER_ARGS[@]}" "$script_name" 2>/dev/null || {
+			echo "Failed to build $script_name"
+			deactivate
+			exit 1
+		}
 
 		deactivate
 
@@ -77,10 +85,33 @@ function build_python_test_utils() {
 	else
 		echo "Skipping $script_path, no changes detected."
 	fi
+	cd "$current_dir" || return
 }
 
-python_utils=$(find test-utils -maxdepth 1 -name '*.py')
+function install_venv() {
+	local dir=$1
+	if [[ -d $dir/venv ]]; then
+		return
+	fi
+	current_dir=$(pwd)
+	cd "$dir" || return
+	python3 -m venv venv
+	# shellcheck disable=SC1091
+	source venv/bin/activate || {
+		echo "Failed to activate virtual environment"
+		exit 1
+	}
+	python3 -m pip install --quiet --upgrade pyinstaller
+	python3 -m pip install --quiet --upgrade -r requirements.txt || {
+		echo "Failed to install requirements"
+		deactivate
+		exit 1
+	}
+	cd "$current_dir" || return
+}
 
+install_venv "test-utils"
+python_utils=$(find test-utils -maxdepth 1 -name '*.py')
 for script in $python_utils; do
 	build_python_test_utils "$script"
 done
