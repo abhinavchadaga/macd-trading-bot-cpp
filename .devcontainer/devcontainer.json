@@ -15,6 +15,7 @@
         // CPP
         "llvm-vs-code-extensions.vscode-clangd",
         "tdennis4496.cmantic",
+        "matepek.vscode-catch2-test-adapter",
         // CMAKE
         "twxs.cmake",
         "josetr.cmake-language-support-vscode",
