@@ -50,6 +50,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           timeout_minutes: "10"
           allowed_tools: "Read,Write"
+          disallowed_tools: "mcp_github*"
           direct_prompt: |
             Read the pull request context from claude_context.txt and write a clear, concise PR description to generated_description.md.
 
