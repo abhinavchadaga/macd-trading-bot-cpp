@@ -62,6 +62,11 @@ MACD::write(const OHLCV &ohlcv)
 OHLCVIndicator::Snapshot
 MACD::read() const
 {
+
+  if (!is_ready())
+    {
+      throw std::runtime_error("MACD is not ready");
+    }
   const double fast_ema_value = _fast_ema.read().begin()->second;
   const double slow_ema_value = _slow_ema.read().begin()->second;
   const double signal_line    = _signal_ema.read().begin()->second;
