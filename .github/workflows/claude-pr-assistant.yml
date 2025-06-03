@@ -47,10 +47,9 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           timeout_minutes: "10"
           allowed_tools: "Read,Write"
-          disallowed_tools: "mcp_github*"
+          disallowed_tools: "mcp__github_file_ops__commit_files,mcp__github_file_ops__delete_files,mcp__github_file_ops__update_claude_comment,GitHub"
           direct_prompt: |
             Read the pull request context from claude_context.txt and write a clear, concise PR description to generated_description.md.
 
