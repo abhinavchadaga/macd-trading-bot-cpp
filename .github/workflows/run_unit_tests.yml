@@ -35,8 +35,8 @@ jobs:
 
       - name: Install python-utils
         run: |
-          chmod +x ./test-utils/build_py_utils.sh
-          ./test-utils/build_py_utils.sh
+          chmod +x ./test-utils/install.sh
+          ./test-utils/install.sh
 
       - name: Build project
         run: cmake --build build/Release --target unit_tests
