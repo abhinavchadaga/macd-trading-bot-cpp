@@ -87,14 +87,13 @@ protected:
         }
     });
 
-    auto aggregator_connection
-      = aggregator.connect_aggregated_bar_handler([&](const BarType &b) {
-          ++aggregated_bar_count;
-          LOG_INFO(BarAggregatorIntegrationTest, run_aggregation_test)
-            << test_name << " - Received aggregated bar "
-            << aggregated_bar_count.load() << ": " << b.symbol() << " at "
-            << b.close() << " (vol: " << b.volume() << ")";
-        });
+    auto aggregator_connection = aggregator.subscribe([&](const BarType &b) {
+      ++aggregated_bar_count;
+      LOG_INFO(BarAggregatorIntegrationTest, run_aggregation_test)
+        << test_name << " - Received aggregated bar "
+        << aggregated_bar_count.load() << ": " << b.symbol() << " at "
+        << b.close() << " (vol: " << b.volume() << ")";
+    });
 
     feed.start();
     feed.subscribe_to_bars({ "PLTR" });
