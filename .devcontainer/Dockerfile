@@ -56,8 +56,8 @@ RUN dnf update -y && dnf install -y \
 COPY .zshrc /root/.zshrc
 RUN chsh -s $(which zsh)
 
-# Install claude code
-RUN npm install -g @anthropic-ai/claude-code
+# Install npm packages
+RUN npm install -g @anthropic-ai/claude-code pure-prompt
 
 # Set locale
 ENV LANG=en_US.UTF-8

@@ -24,6 +24,9 @@ zinit snippet OMZP::command-not-found
 
 # Load completions
 autoload -Uz compinit && compinit
+autoload -U promptinit
+promptinit
+prompt pure
 
 # History
 HISTSIZE=5000
@@ -88,3 +91,5 @@ export FZF_DEFAULT_COMMAND="fd --type file --color=always"
 export FZF_DEFAULT_OPTS="--ansi"
 export FZF_PREVIEW_COMMAND="if [[ -d {} ]]; then tree -C -L 2 {} 2>/dev/null || ls -la --color=always {}; elif [[ -f {} ]]; then bat --style=numbers --color=always {} 2>/dev/null || cat {}; else echo {}; fi"
 export FZF_CTRL_T_OPTS="--preview 'if [[ -d {} ]]; then tree -C -L 2 {} 2>/dev/null || ls -la --color=always {}; elif [[ -f {} ]]; then bat --style=numbers --color=always {} 2>/dev/null || cat {}; else echo {}; fi' --preview-window=right:60%"
+
+source <(fzf --zsh)
