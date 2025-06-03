@@ -54,11 +54,7 @@ jobs:
             Based on the pull request context provided in claude_context.txt, please:
 
             1. Analyze the code changes and commit messages
-            2. Generate a well-structured PR description that includes:
-               - A brief summary of what this PR does
-               - Key changes made
-               - Any relevant technical details
-               - Testing considerations if applicable
+            2. Generate a well-structured PR description that simply summarizes the changes that were made.
             3. Write the generated description to a file called 'generated_description.md'. Do not update the pull request description directly.
 
             Format your response in GitHub Markdown. Focus on being clear, concise, and helpful for code reviewers.
