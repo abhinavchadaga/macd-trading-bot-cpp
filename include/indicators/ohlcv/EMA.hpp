@@ -39,7 +39,7 @@ public:
 private:
 
   double      _value { 0.0 };
-  std::size_t _n {};
+  std::size_t _n { 0 };
   double      _alpha {};
   std::size_t _period {};
 };

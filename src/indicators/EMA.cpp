@@ -59,15 +59,15 @@ EMA::write(const OHLCV &ohlcv)
 void
 EMA::write(const double close)
 {
-  if (!is_ready())
+  if (is_ready())
+    {
+      _value = close * _alpha + _value * (1 - _alpha);
+    }
+  else
     {
       ++_n;
       _value = (_value * static_cast<double>(_n - 1) + close)
              / static_cast<double>(_n);
-    }
-  else
-    {
-      _value = close * _alpha + _value * (1 - _alpha);
     }
 }
 
