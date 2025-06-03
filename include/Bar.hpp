@@ -122,6 +122,16 @@ public:
     return _timestamp;
   }
 
+  bool
+  operator==(const Bar &other) const
+  {
+    return _symbol == other._symbol && _ohlcv.open == other._ohlcv.open
+        && _ohlcv.high == other._ohlcv.high && _ohlcv.low == other._ohlcv.low
+        && _ohlcv.close == other._ohlcv.close
+        && _ohlcv.volume == other._ohlcv.volume
+        && _timestamp == other._timestamp;
+  }
+
 private:
 
   std::string _symbol {};

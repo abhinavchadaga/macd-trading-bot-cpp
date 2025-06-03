@@ -7,6 +7,7 @@
 #include "indicators/ohlcv/EMA.hpp"
 #include "indicators/ohlcv/MACD.hpp"
 
+#include <cstdlib>
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <vector>
@@ -90,11 +91,13 @@ TEST_F(
   IndicatorEngineIntegrationTest,
   ProcessesPLTRDataAndProducesSteadyIndicatorStream)
 {
-  // Load PLTR CSV data
-  const std::string csv_path
-    = std::filesystem::current_path() / "test-utils"
-    / "PLTR_2025-05-19_2025-05-23_1min_market_hours.csv";
-
+  std::string csv_path = "/tmp/pltr_one_day_data.csv";
+  std::string cmd {
+    "build/python-utils/historical_bars_to_csv PLTR 2025-05-30 "
+    "2025-05-31 --output "
+    + csv_path
+  };
+  std::system(cmd.c_str());
   ASSERT_TRUE(std::filesystem::exists(csv_path))
     << "PLTR CSV file not found at: " << csv_path;
 
@@ -240,4 +243,6 @@ TEST_F(
       std::cout << "    Histogram: "
                 << final_snapshot.at("MACD").at("histogram") << std::endl;
     }
+
+  std::filesystem::remove(csv_path);
 }

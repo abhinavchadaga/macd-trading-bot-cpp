@@ -42,7 +42,7 @@ protected:
       }
 
     std::ostringstream start_cmd;
-    start_cmd << script_path << " &";
+    start_cmd << script_path << " PLTR 2025-05-19 2025-05-23 &";
 
     if (const int result = std::system(start_cmd.str().c_str()); result != 0)
       {
