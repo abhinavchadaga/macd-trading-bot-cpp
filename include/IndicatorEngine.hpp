@@ -5,6 +5,7 @@
 #include "LoggingUtils.hpp"
 #include "indicators/ohlcv/OHLCVIndicator.hpp"
 
+#include <boost/signals2.hpp>
 #include <ranges>
 
 template <
@@ -21,6 +22,7 @@ public:
     = std::unordered_map<std::string, typename IndicatorInterface::Snapshot>;
   using IndicatorContainer
     = std::unordered_map<std::string, std::unique_ptr<IndicatorInterface>>;
+  using indicator_signal_t = boost::signals2::signal<void(const Snapshots &)>;
 
   explicit IndicatorEngine(const std::vector<IndicatorConfig> &configs);
 
@@ -29,12 +31,19 @@ public:
   [[nodiscard]]
   bool is_ready() const;
 
-  const Snapshots &read();
+  boost::signals2::connection
+  subscribe(const typename indicator_signal_t::slot_type &handler)
+  {
+    return _indicator_signal.connect(handler);
+  }
 
 private:
 
+  void update_snapshots();
+
   IndicatorContainer _indicators {};
   Snapshots          _snapshots {};
+  indicator_signal_t _indicator_signal {};
 };
 
 template <
@@ -68,6 +77,25 @@ IndicatorEngine<Count, TimeUnit, IndicatorInterface>::on_bar(
 {
   for (const auto &indicator_ptr : _indicators | std::views::values)
     indicator_ptr->write(bar.ohlcv());
+
+  if (is_ready())
+    {
+      update_snapshots();
+      _indicator_signal(_snapshots);
+    }
+}
+
+template <
+  std::size_t    Count,
+  ChronoDuration TimeUnit,
+  typename IndicatorInterface>
+void
+IndicatorEngine<Count, TimeUnit, IndicatorInterface>::update_snapshots()
+{
+  for (const auto &[name, indicator_ptr] : _indicators)
+    {
+      _snapshots[name] = std::move(indicator_ptr->read());
+    }
 }
 
 template <
@@ -83,29 +111,6 @@ IndicatorEngine<Count, TimeUnit, IndicatorInterface>::is_ready() const
     [](const auto &p) {
       return p.second->is_ready();
     });
-}
-
-template <
-  std::size_t    Count,
-  ChronoDuration TimeUnit,
-  typename IndicatorInterface>
-const typename IndicatorEngine<Count, TimeUnit, IndicatorInterface>::
-  Snapshots &
-  IndicatorEngine<Count, TimeUnit, IndicatorInterface>::read()
-{
-  if (!is_ready())
-    {
-      throw std::runtime_error {
-        "Indicators in IndicatorEngine are not all ready"
-      };
-    }
-
-  for (const auto &[name, indicator_ptr] : _indicators)
-    {
-      _snapshots[name] = std::move(indicator_ptr->read());
-    }
-
-  return _snapshots;
 }
 
 // Convenient type aliases for OHLCV indicators
