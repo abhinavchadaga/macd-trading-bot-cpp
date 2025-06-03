@@ -49,17 +49,37 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           timeout_minutes: "10"
           direct_prompt: |
-            You are a technical writer helping to create a clear and concise pull request description.
+            Read the pull request context from claude_context.txt and write a clear, concise PR description to generated_description.md.
 
-            Based on the pull request context provided in claude_context.txt, please:
+            The file should contain ONLY the PR description content in GitHub Markdown format - no meta-commentary, no explanations about what you did, just the actual description that will become the PR body.
 
-            1. Analyze the code changes and commit messages
-            2. Generate a well-structured PR description that simply summarizes the changes that were made.
-            3. Write the generated description to a file called 'generated_description.md'. Do not update the pull request description directly.
+            Structure the description with:
+            ## Summary
+            Brief overview of what this PR does
 
-            Format your response in GitHub Markdown. Focus on being clear, concise, and helpful for code reviewers.
+            ## Changes Made
+            - Key changes in bullet points
 
-            The context file contains the PR title, author, commit messages, and complete code diff for analysis.
+            ## Impact
+            What this improves or fixes
+
+            Write ONLY the PR description content to generated_description.md - nothing else.
+
+      - name: Debug - Verify generated content
+        run: |
+          echo "=== Checking if generated_description.md exists ==="
+          if [ -f "generated_description.md" ]; then
+            echo "✅ File exists"
+            echo "📏 File size: $(wc -c < generated_description.md) bytes"
+            echo "📄 File contents:"
+            echo "--- START OF FILE ---"
+            cat generated_description.md
+            echo "--- END OF FILE ---"
+          else
+            echo "❌ generated_description.md not found!"
+            echo "📁 Files in current directory:"
+            ls -la
+          fi
 
       - name: Update PR description
         uses: actions/github-script@v7
