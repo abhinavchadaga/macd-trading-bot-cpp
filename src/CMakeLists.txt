@@ -18,3 +18,6 @@ target_link_libraries(AlpacaMarketFeed PUBLIC WebSocketSession nlohmann_json::nl
 file(GLOB INDICATORS_SRCS indicators/*.cpp)
 add_library(Indicators OBJECT ${INDICATORS_SRCS})
 target_include_directories(Indicators PUBLIC ${CMAKE_SOURCE_DIR}/include)
+
+add_library(MacdAtrStrategy OBJECT MacdAtrStrategy.cpp)
+target_include_directories(MacdAtrStrategy PUBLIC ${CMAKE_SOURCE_DIR}/include)
