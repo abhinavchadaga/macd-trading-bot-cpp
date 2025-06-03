@@ -8,4 +8,5 @@ if ! $build_cmd; then
 	exit 1
 fi
 
+./test-utils/install.sh
 ./build/Debug/tests/unit_tests
