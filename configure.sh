@@ -2,6 +2,8 @@
 
 # configure cmake
 
+set -x
+
 buildType=$1
 
 if [[ -z $1 ]]; then
