@@ -50,14 +50,11 @@ if [ -n "$PORT_PID" ]; then
 	sleep 1
 fi
 
-historical_bars_to_csv="build/python-utils/historical_bars_to_csv"
-historical_alpaca_ws_endpoint="build/python-utils/historical_alpaca_ws_endpoint"
-
 CSV_FILE="/tmp/${SYMBOL}_${START_DATE}_${END_DATE}_1min_market_hours.csv"
-./"$historical_bars_to_csv" "$SYMBOL" "$START_DATE" "$END_DATE" --output "${CSV_FILE}"
+historical_bars_to_csv "$SYMBOL" "$START_DATE" "$END_DATE" --output "${CSV_FILE}"
 
 echo "Starting historical WebSocket endpoint..."
-./"$historical_alpaca_ws_endpoint" "$CSV_FILE" --delay 0.1 &
+historical_alpaca_ws_endpoint "$CSV_FILE" --delay 0.1 &
 PYTHON_PID=$!
 
 echo "Python process started with PID: $PYTHON_PID"
