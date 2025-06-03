@@ -46,10 +46,12 @@ MACD::is_ready() const
 void
 MACD::write(const OHLCV &ohlcv)
 {
+  bool should_calc_signal { _fast_ema.is_ready() && _slow_ema.is_ready() };
+
   _fast_ema.write(ohlcv);
   _slow_ema.write(ohlcv);
 
-  if (_fast_ema.is_ready() && _slow_ema.is_ready())
+  if (should_calc_signal)
     {
       const double fast_ema_value = _fast_ema.read().begin()->second;
       const double slow_ema_value = _slow_ema.read().begin()->second;
