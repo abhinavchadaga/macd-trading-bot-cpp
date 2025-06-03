@@ -6,14 +6,14 @@
 #include <cstddef>
 #include <string_view>
 
-class ATR final : public OHLCVIndicator
+class atr final : public ohlcv_indicator
 {
 public:
 
   static constexpr std::string_view name { "ATR" };
 
-  explicit ATR(std::size_t period = 14);
-  explicit ATR(const IndicatorConfig &config);
+  explicit atr(std::size_t period = 14);
+  explicit atr(const indicator_config &config);
 
   //
   // Indicator methods
@@ -22,9 +22,9 @@ public:
   bool is_ready() const override;
 
   [[nodiscard]]
-  Snapshot read() const override;
+  snapshot read() const override;
 
-  void write(const OHLCV &ohlcv) override;
+  void write(const ohlcv &ohlcv) override;
 
   //
   // ATR methods

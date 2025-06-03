@@ -4,39 +4,39 @@
 
 #include <stdexcept>
 
-REGISTER_INDICATOR(ATR, OHLCVIndicator)
+REGISTER_INDICATOR(atr, ohlcv_indicator)
 
-ATR::ATR(const std::size_t period)
+atr::atr(const std::size_t period)
   : _period { period }
 {
 }
 
-ATR::ATR(const IndicatorConfig &config)
-  : ATR { [&config]() {
+atr::atr(const indicator_config &config)
+  : atr { [&config]() {
     if (const auto it = config.params.find("period");
         it != config.params.end())
       {
         return static_cast<std::size_t>(it->second);
       }
-    throw std::runtime_error { "invalid config for ATR" };
+    throw std::runtime_error { "invalid config for atr" };
   }() }
 {
 }
 
 std::size_t
-ATR::period() const
+atr::period() const
 {
   return _period;
 }
 
 bool
-ATR::is_ready() const
+atr::is_ready() const
 {
   return _n >= _period;
 }
 
 void
-ATR::write(const OHLCV &ohlcv)
+atr::write(const ohlcv &ohlcv)
 {
   if (_prev_close == -1.0)
     {
@@ -56,12 +56,12 @@ ATR::write(const OHLCV &ohlcv)
   _prev_close = ohlcv.close;
 }
 
-OHLCVIndicator::Snapshot
-ATR::read() const
+ohlcv_indicator::snapshot
+atr::read() const
 {
   if (!is_ready())
     {
-      throw std::runtime_error("ATR::read(): no valid ATR data");
+      throw std::runtime_error("atr::read(): no valid atr data");
     }
 
   return {
@@ -70,7 +70,7 @@ ATR::read() const
 }
 
 double
-ATR::calc_tr(const double high, const double low, const double prev_close)
+atr::calc_tr(const double high, const double low, const double prev_close)
 {
   return std::max(
     { std::abs(high - low),

@@ -11,50 +11,50 @@ template <
   std::size_t    Count,
   ChronoDuration TimeUnit,
   typename IndicatorInterface>
-class IndicatorEngine
+class indicator_engine
 {
 public:
 
-  using BarType      = Bar<Count, TimeUnit>;
-  using RegistryType = IndicatorRegistry<IndicatorInterface>;
-  using Snapshots
-    = std::unordered_map<std::string, typename IndicatorInterface::Snapshot>;
-  using IndicatorContainer
+  using bar_type      = bar<Count, TimeUnit>;
+  using registry_type = indicator_registry<IndicatorInterface>;
+  using snapshots
+    = std::unordered_map<std::string, typename IndicatorInterface::snapshot>;
+  using indicator_container
     = std::unordered_map<std::string, std::unique_ptr<IndicatorInterface>>;
 
-  explicit IndicatorEngine(const std::vector<IndicatorConfig> &configs);
+  explicit indicator_engine(const std::vector<indicator_config> &configs);
 
-  void on_bar(const BarType &bar);
+  void on_bar(const bar_type &bar);
 
   [[nodiscard]]
   bool is_ready() const;
 
-  const Snapshots &read();
+  const snapshots &read();
 
 private:
 
-  IndicatorContainer _indicators {};
-  Snapshots          _snapshots {};
+  indicator_container _indicators {};
+  snapshots          _snapshots {};
 };
 
 template <
   std::size_t    Count,
   ChronoDuration TimeUnit,
   typename IndicatorInterface>
-IndicatorEngine<Count, TimeUnit, IndicatorInterface>::IndicatorEngine(
-  const std::vector<IndicatorConfig> &configs)
+indicator_engine<Count, TimeUnit, IndicatorInterface>::indicator_engine(
+  const std::vector<indicator_config> &configs)
 {
   configure_logging();
-  CLASS_LOGGER(IndicatorEngine);
+  CLASS_LOGGER(indicator_engine);
 
   for (const auto &config : configs)
     {
-      auto [name_sv, indicator] { RegistryType::create(config) };
+      auto [name_sv, indicator] { registry_type::create(config) };
       const std::string name { name_sv };
-      LOG_INFO(IndicatorEngine, IndicatorEngine)
+      LOG_INFO(indicator_engine, indicator_engine)
         << "registered " + name << " indicator!";
       _indicators[name] = std::move(indicator);
-      _snapshots[name]  = std::move(typename IndicatorInterface::Snapshot {});
+      _snapshots[name]  = std::move(typename IndicatorInterface::snapshot {});
     }
 }
 
@@ -63,8 +63,8 @@ template <
   ChronoDuration TimeUnit,
   typename IndicatorInterface>
 void
-IndicatorEngine<Count, TimeUnit, IndicatorInterface>::on_bar(
-  const BarType &bar)
+indicator_engine<Count, TimeUnit, IndicatorInterface>::on_bar(
+  const bar_type &bar)
 {
   for (const auto &indicator_ptr : _indicators | std::views::values)
     indicator_ptr->write(bar.ohlcv());
@@ -75,7 +75,7 @@ template <
   ChronoDuration TimeUnit,
   typename IndicatorInterface>
 bool
-IndicatorEngine<Count, TimeUnit, IndicatorInterface>::is_ready() const
+indicator_engine<Count, TimeUnit, IndicatorInterface>::is_ready() const
 {
   return std::ranges::all_of(
     _indicators.begin(),
@@ -89,14 +89,14 @@ template <
   std::size_t    Count,
   ChronoDuration TimeUnit,
   typename IndicatorInterface>
-const typename IndicatorEngine<Count, TimeUnit, IndicatorInterface>::
-  Snapshots &
-  IndicatorEngine<Count, TimeUnit, IndicatorInterface>::read()
+const typename indicator_engine<Count, TimeUnit, IndicatorInterface>::
+  snapshots &
+  indicator_engine<Count, TimeUnit, IndicatorInterface>::read()
 {
   if (!is_ready())
     {
       throw std::runtime_error {
-        "Indicators in IndicatorEngine are not all ready"
+        "Indicators in indicator_engine are not all ready"
       };
     }
 
@@ -109,9 +109,9 @@ const typename IndicatorEngine<Count, TimeUnit, IndicatorInterface>::
 }
 
 // Convenient type aliases for OHLCV indicators
-using OHLCVIndicatorRegistry = IndicatorRegistry<OHLCVIndicator>;
+using ohlcv_indicator_registry = indicator_registry<ohlcv_indicator>;
 
 template <std::size_t Count, ChronoDuration TimeUnit>
-using OHLCVIndicatorEngine = IndicatorEngine<Count, TimeUnit, OHLCVIndicator>;
+using ohlcv_indicator_engine = indicator_engine<Count, TimeUnit, ohlcv_indicator>;
 
-using DefaultIndicatorEngine = OHLCVIndicatorEngine<5, std::chrono::minutes>;
+using default_indicator_engine = ohlcv_indicator_engine<5, std::chrono::minutes>;

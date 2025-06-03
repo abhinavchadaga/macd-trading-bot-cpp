@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <string>
 
-struct OHLCV
+struct ohlcv
 {
   double   open {};
   double   high {};
@@ -15,7 +15,7 @@ struct OHLCV
 };
 
 template <typename T>
-concept ChronoDuration
+concept chrono_duration
   = std::same_as<T, std::chrono::nanoseconds>
  || std::same_as<T, std::chrono::microseconds>
  || std::same_as<T, std::chrono::milliseconds>
@@ -25,13 +25,13 @@ concept ChronoDuration
  || std::same_as<T, std::chrono::weeks> || std::same_as<T, std::chrono::months>
  || std::same_as<T, std::chrono::years>;
 
-template <std::size_t Count, ChronoDuration TimeUnit>
+template <std::size_t Count, chrono_duration TimeUnit>
   requires(Count > 0)
-class Bar
+class bar
 {
 public:
 
-  using Timestamp = std::chrono::sys_time<TimeUnit>;
+  using timestamp = std::chrono::sys_time<TimeUnit>;
 
   static constexpr int
   count()
@@ -45,21 +45,21 @@ public:
     return TimeUnit { Count };
   }
 
-  Bar(std::string symbol, const OHLCV &ohlcv, const Timestamp ts)
+  bar(std::string symbol, const ohlcv &ohlcv, const timestamp ts)
     : _symbol { std::move(symbol) }
     , _ohlcv { ohlcv }
     , _timestamp { ts }
   {
   }
 
-  Bar(
+  bar(
     std::string     symbol,
     const double    open,
     const double    high,
     const double    low,
     const double    close,
     const uint64_t  volume,
-    const Timestamp ts)
+    const timestamp ts)
     : _symbol { std::move(symbol) }
     , _ohlcv { open, high, low, close, volume }
     , _timestamp { ts }
@@ -74,7 +74,7 @@ public:
   }
 
   [[nodiscard]]
-  const OHLCV &
+  const ohlcv &
   ohlcv() const
   {
     return _ohlcv;
@@ -116,7 +116,7 @@ public:
   }
 
   [[nodiscard]]
-  Timestamp
+  timestamp
   timestamp() const
   {
     return _timestamp;
@@ -125,19 +125,19 @@ public:
 private:
 
   std::string _symbol {};
-  OHLCV       _ohlcv {};
-  Timestamp   _timestamp {};
+  ohlcv       _ohlcv {};
+  timestamp   _timestamp {};
 };
 
 template <
-  std::size_t    Count1,
-  ChronoDuration TimeUnit1,
-  std::size_t    Count2,
-  ChronoDuration TimeUnit2>
+  std::size_t       Count1,
+  chrono_duration   TimeUnit1,
+  std::size_t       Count2,
+  chrono_duration   TimeUnit2>
 bool
-isConsecutive(
-  const Bar<Count1, TimeUnit1> &left,
-  const Bar<Count2, TimeUnit2> &right)
+is_consecutive(
+  const bar<Count1, TimeUnit1> &left,
+  const bar<Count2, TimeUnit2> &right)
 {
   if (left.symbol() != right.symbol())
     {
@@ -159,6 +159,6 @@ isConsecutive(
   return (left_end == right_start) || (right_end == left_start);
 }
 
-using Bar1min = Bar<1, std::chrono::minutes>;
-using Bar5min = Bar<5, std::chrono::minutes>;
-using Bar1h   = Bar<1, std::chrono::hours>;
+using bar_1min = bar<1, std::chrono::minutes>;
+using bar_5min = bar<5, std::chrono::minutes>;
+using bar_1h   = bar<1, std::chrono::hours>;

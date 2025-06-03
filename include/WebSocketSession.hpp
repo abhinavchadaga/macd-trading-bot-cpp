@@ -19,7 +19,7 @@ namespace net       = boost::asio;
 namespace ssl       = boost::asio::ssl;
 using tcp           = boost::asio::ip::tcp;
 
-struct WebSocketSessionConfig
+struct web_socket_session_config
 {
   std::string   host;
   std::string   port;
@@ -29,18 +29,18 @@ struct WebSocketSessionConfig
   ssl::context &ssl_ctxt;
 };
 
-class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
+class web_socket_session : public std::enable_shared_from_this<web_socket_session>
 {
 public:
 
   using frame_handler = std::function<void(std::string_view)>;
 
-  static std::shared_ptr<WebSocketSession> create(
-    net::io_context              &ioc,
-    const WebSocketSessionConfig &config,
-    const frame_handler          &on_frame);
+  static std::shared_ptr<web_socket_session> create(
+    net::io_context                    &ioc,
+    const web_socket_session_config &config,
+    const frame_handler                &on_frame);
 
-  explicit WebSocketSession(net::io_context &ioc, WebSocketSessionConfig cfg);
+  explicit web_socket_session(net::io_context &ioc, web_socket_session_config cfg);
 
   void start();
 
@@ -80,7 +80,7 @@ private:
 
   void reconnect();
 
-  WebSocketSessionConfig _config;
+  web_socket_session_config _config;
 
   //
   // Boost::Beast state
@@ -94,6 +94,6 @@ private:
   frame_handler           _frame_handler;
   std::queue<std::string> _write_queue;
 
-  bool _connected;
-  bool _should_reconnect;
+  bool _connected { false };
+  bool _should_reconnect { true };
 };

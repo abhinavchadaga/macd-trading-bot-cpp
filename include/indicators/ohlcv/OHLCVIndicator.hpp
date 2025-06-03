@@ -5,21 +5,21 @@
 #include <string>
 #include <unordered_map>
 
-class OHLCVIndicator
+class ohlcv_indicator
 {
 public:
 
-  using Snapshot = std::unordered_map<std::string, double>;
+  using snapshot = std::unordered_map<std::string, double>;
 
-  virtual ~OHLCVIndicator() = default;
+  virtual ~ohlcv_indicator() = default;
 
   [[nodiscard]]
   virtual bool is_ready() const
     = 0;
 
   [[nodiscard]]
-  virtual Snapshot read() const
+  virtual snapshot read() const
     = 0;
 
-  virtual void write(const OHLCV &ohlcv) = 0;
+  virtual void write(const ohlcv &ohlcv) = 0;
 };

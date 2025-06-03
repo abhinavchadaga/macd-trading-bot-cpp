@@ -36,7 +36,7 @@ TEST_F(AlpacaWSMarketFeedTest, ConnectsToFAKEPACAStream)
 {
   std::atomic received_bar { false };
   std::atomic bar_count { 0 };
-  Bar1min     latest_bar { "", 0, 0, 0, 0, 0, {} };
+  bar_1min     latest_bar { "", 0, 0, 0, 0, 0, {} };
 
   const char *api_key    = std::getenv("ALPACA_API_KEY");
   const char *api_secret = std::getenv("ALPACA_API_SECRET");
@@ -53,7 +53,7 @@ TEST_F(AlpacaWSMarketFeedTest, ConnectsToFAKEPACAStream)
 
   AlpacaWSMarketFeed feed { *_ioc, config };
 
-  auto connection = feed.connect_bar_handler([&](const Bar1min &b) {
+  auto connection = feed.connect_bar_handler([&](const bar_1min &b) {
     latest_bar   = b;
     received_bar = true;
     ++bar_count;
@@ -128,7 +128,7 @@ TEST_F(AlpacaWSMarketFeedTest, HistoricalDataFeedTest)
 
   AlpacaWSMarketFeed feed { *_ioc, config };
 
-  auto connection = feed.connect_bar_handler([&](const Bar1min &b) {
+  auto connection = feed.connect_bar_handler([&](const bar_1min &b) {
     ++received_bars;
 
     std::stringstream ss;

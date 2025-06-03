@@ -85,7 +85,7 @@ protected:
     const auto         config = get_test_config();
     AlpacaWSMarketFeed feed { *_ioc, config };
 
-    auto feed_connection = feed.connect_bar_handler([&](const Bar1min &b) {
+    auto feed_connection = feed.connect_bar_handler([&](const bar_1min &b) {
       ++minute_bar_count;
       LOG_INFO(BarAggregatorIntegrationTest, run_aggregation_test)
         << test_name << " - Received 1-minute bar " << minute_bar_count.load()
@@ -147,7 +147,7 @@ TEST_F(BarAggregatorIntegrationTest, AggregatesHistoricalBarsCorrectly)
   BarAggregator<5, minutes> aggregator {};
   constexpr int             minute_bars        = 20;
   constexpr int             expected_5min_bars = minute_bars / 5; // 20 / 5 = 4
-  run_aggregation_test<BarAggregator<5, minutes>, Bar5min>(
+  run_aggregation_test<BarAggregator<5, minutes>, bar_5min>(
     aggregator,
     minute_bars,
     expected_5min_bars,
@@ -160,7 +160,7 @@ TEST_F(BarAggregatorIntegrationTest, AggregatesHistoricalBarsToHourCorrectly)
   constexpr int           minute_bars = 65;
   constexpr int           expected_1h_bars
     = minute_bars / 60; // 65 / 60 = 1 (integer division)
-  run_aggregation_test<BarAggregator<1, hours>, Bar1h>(
+  run_aggregation_test<BarAggregator<1, hours>, bar_1h>(
     aggregator,
     minute_bars,
     expected_1h_bars,

@@ -7,8 +7,8 @@
 #include <sstream>
 #include <vector>
 
-Bar1min::Timestamp
-parseRFC3339UTCTimestamp(const std::string &timestamp)
+bar_1min::timestamp
+parse_rfc3339_utc_timestamp(const std::string &timestamp)
 {
   std::chrono::sys_seconds tp {};
   std::istringstream       ss { timestamp };
@@ -39,8 +39,8 @@ parseRFC3339UTCTimestamp(const std::string &timestamp)
   return std::chrono::time_point_cast<std::chrono::minutes>(tp);
 }
 
-Bar1min
-createBarFromCSVLine(const std::string &line)
+bar_1min
+create_bar_from_csv_line(const std::string &line)
 {
   std::istringstream       ss { line };
   std::string              token;
@@ -64,21 +64,21 @@ createBarFromCSVLine(const std::string &line)
   double      close     = std::stod(tokens[5]);
   auto        volume    = static_cast<uint64_t>(std::stod(tokens[6]));
 
-  Bar1min::Timestamp ts = parseRFC3339UTCTimestamp(timestamp);
+  bar_1min::timestamp ts = parse_rfc3339_utc_timestamp(timestamp);
 
-  return Bar1min { std::move(symbol), open, high, low, close, volume, ts };
+  return bar_1min { std::move(symbol), open, high, low, close, volume, ts };
 }
 
-std::vector<Bar1min>
-createBarsFromCSV(const std::string &csvPath)
+std::vector<bar_1min>
+create_bars_from_csv(const std::string &csv_path)
 {
-  std::ifstream file { csvPath };
+  std::ifstream file { csv_path };
   if (!file.is_open())
     {
-      throw std::runtime_error { "Failed to open CSV file: " + csvPath };
+      throw std::runtime_error { "Failed to open CSV file: " + csv_path };
     }
 
-  std::vector<Bar1min> bars;
+  std::vector<bar_1min> bars;
   std::string          line;
 
   if (std::getline(file, line))
@@ -90,7 +90,7 @@ createBarsFromCSV(const std::string &csvPath)
     {
       if (!line.empty())
         {
-          bars.push_back(createBarFromCSVLine(line));
+          bars.push_back(create_bar_from_csv_line(line));
         }
     }
 

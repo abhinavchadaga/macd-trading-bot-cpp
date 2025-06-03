@@ -6,20 +6,20 @@
 #include <string_view>
 
 template <typename T>
-concept HasName = requires {
+concept has_name = requires {
   {
     T::name
   } -> std::convertible_to<std::string_view>;
 };
 
-template <HasName DerivedIndicator, typename IndicatorInterface>
-struct IndicatorRegistrar
+template <has_name DerivedIndicator, typename IndicatorInterface>
+struct indicator_registrar
 {
-  IndicatorRegistrar()
+  indicator_registrar()
   {
-    IndicatorRegistry<IndicatorInterface>::register_indicator(
+    indicator_registry<IndicatorInterface>::register_indicator(
       DerivedIndicator::name,
-      [](const IndicatorConfig &config) {
+      [](const indicator_config &config) {
         return std::make_pair(
           DerivedIndicator::name,
           std::make_unique<DerivedIndicator>(config));
@@ -28,5 +28,5 @@ struct IndicatorRegistrar
 };
 
 #define REGISTER_INDICATOR(Indicator, IndicatorInterface)                     \
-  static IndicatorRegistrar<Indicator, IndicatorInterface>                    \
+  static indicator_registrar<Indicator, IndicatorInterface>                    \
     _registrar##Indicator;

@@ -26,7 +26,7 @@ protected:
   }
 
   static std::vector<OHLCV>
-  createTestData()
+  create_test_data()
   {
     // open, high, low, close
     const std::vector<std::array<double, 4>> test_data {
@@ -63,7 +63,7 @@ protected:
   }
 
   static void
-  logComparison(
+  log_comparison(
     const std::string &indicator,
     const int          period,
     const double       my_result,
@@ -83,7 +83,7 @@ TEST_F(IndicatorTest, EMA_CompareWithTALib)
   constexpr std::size_t period { 10 };
   constexpr double      threshold { 0.001 };
 
-  const auto ohlcv_data { createTestData() };
+  const auto ohlcv_data { create_test_data() };
   EMA        my_ema { period };
 
   std::vector<double> close_prices {};
@@ -111,7 +111,7 @@ TEST_F(IndicatorTest, EMA_CompareWithTALib)
   const double my_result { my_ema.read()["ema"] };
   const double talib_value { talib_ema[out_nb_element - 1] };
 
-  logComparison("EMA", period, my_result, talib_value, threshold);
+  log_comparison("EMA", period, my_result, talib_value, threshold);
 
   const double abs_diff { std::abs(my_result - talib_value) };
   EXPECT_LT(abs_diff, threshold)
@@ -123,7 +123,7 @@ TEST_F(IndicatorTest, ATR_CompareWithTALib)
   constexpr int    period { 14 };
   constexpr double threshold { 0.001 };
 
-  const auto ohlcv_data { createTestData() };
+  const auto ohlcv_data { create_test_data() };
   ATR        my_atr { period };
 
   std::vector<double> high_prices, low_prices, close_prices;
@@ -156,7 +156,7 @@ TEST_F(IndicatorTest, ATR_CompareWithTALib)
   const double my_value { my_atr.read()["atr"] };
   const double talib_value { talib_atr[out_nb_element - 1] };
 
-  logComparison("ATR", period, my_value, talib_value, threshold);
+  log_comparison("ATR", period, my_value, talib_value, threshold);
 
   const double abs_diff { std::abs(my_value - talib_value) };
   EXPECT_LT(abs_diff, threshold)
@@ -170,7 +170,7 @@ TEST_F(IndicatorTest, MACD_CompareWithTALib)
   constexpr int    signal_period { 2 };
   constexpr double threshold { 0.01 };
 
-  const auto ohlcv_data { createTestData() };
+  const auto ohlcv_data { create_test_data() };
   MACD       my_macd { fast_period, slow_period, signal_period };
 
   std::vector<double> close_prices;
@@ -210,19 +210,19 @@ TEST_F(IndicatorTest, MACD_CompareWithTALib)
   double talib_signal_value    = talib_signal[out_nb_element - 1];
   double talib_histogram_value = talib_histogram[out_nb_element - 1];
 
-  logComparison(
+  log_comparison(
     "MACD",
     fast_period,
     my_macd_value,
     talib_macd_value,
     threshold);
-  logComparison(
+  log_comparison(
     "MACD-Signal",
     signal_period,
     my_signal_value,
     talib_signal_value,
     threshold);
-  logComparison(
+  log_comparison(
     "MACD-Histogram",
     0,
     my_histogram_value,

@@ -2,8 +2,8 @@
 
 #include "Bar.hpp"
 
-Bar1min::Timestamp parseRFC3339UTCTimestamp(const std::string &timestamp);
+bar_1min::timestamp parse_rfc3339_utc_timestamp(const std::string &timestamp);
 
-Bar1min createBarFromCSVLine(const std::string &line);
+bar_1min create_bar_from_csv_line(const std::string &line);
 
-std::vector<Bar1min> createBarsFromCSV(const std::string &csvPath);
+std::vector<bar_1min> create_bars_from_csv(const std::string &csvPath);

@@ -27,7 +27,7 @@ PLTR,2025-05-19T13:31:00Z,23.60,23.75,23.58,23.70,1200,12,23.68,2025-05-19T09:31
 TEST_F(UtilsTest, ParseRFC3339UTCTimestamp)
 {
   std::string timestamp = "2025-05-19T13:30:00Z";
-  auto        result    = parseRFC3339UTCTimestamp(timestamp);
+  auto        result    = parse_rfc3339_utc_timestamp(timestamp);
   auto        expected  = sys_time<minutes> { minutes { 1747661400 / 60 } };
   EXPECT_EQ(result, expected);
 }
@@ -38,7 +38,7 @@ TEST_F(UtilsTest, CreateBarFromCSVLine)
     = "PLTR,2025-05-19T13:30:00Z,23.45,23.67,23.40,23.60,1000,10,23.55,2025-"
       "05-"
       "19T09:30:00-04:00";
-  auto bar = createBarFromCSVLine(line);
+  auto bar = create_bar_from_csv_line(line);
 
   EXPECT_EQ(bar.symbol(), "PLTR");
   EXPECT_DOUBLE_EQ(bar.open(), 23.45);
@@ -47,7 +47,7 @@ TEST_F(UtilsTest, CreateBarFromCSVLine)
   EXPECT_DOUBLE_EQ(bar.close(), 23.60);
   EXPECT_EQ(bar.volume(), 1000);
 
-  auto expected_timestamp = parseRFC3339UTCTimestamp("2025-05-19T13:30:00Z");
+  auto expected_timestamp = parse_rfc3339_utc_timestamp("2025-05-19T13:30:00Z");
   EXPECT_EQ(bar.timestamp(), expected_timestamp);
 }
 
@@ -58,7 +58,7 @@ TEST_F(UtilsTest, CreateBarsFromCSV)
   file << test_csv_content;
   file.close();
 
-  auto bars = createBarsFromCSV(test_file_path);
+  auto bars = create_bars_from_csv(test_file_path);
 
   EXPECT_EQ(bars.size(), 2);
 

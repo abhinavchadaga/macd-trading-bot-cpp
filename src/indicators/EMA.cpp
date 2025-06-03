@@ -4,23 +4,23 @@
 
 #include <stdexcept>
 
-REGISTER_INDICATOR(EMA, OHLCVIndicator);
+REGISTER_INDICATOR(ema, ohlcv_indicator);
 
-EMA::EMA(const std::size_t period)
+ema::ema(const std::size_t period)
   : _alpha { static_cast<double>(SMOOTHING_FACTOR)
              / (1 + static_cast<double>(period)) }
   , _period { period }
 {
 }
 
-EMA::EMA(const IndicatorConfig &config)
-  : EMA { [&config]() {
+ema::ema(const indicator_config &config)
+  : ema { [&config]() {
     if (const auto it = config.params.find("period");
         it != config.params.end())
       {
         return static_cast<std::size_t>(it->second);
       }
-    throw std::runtime_error { "invalid config for EMA" };
+    throw std::runtime_error { "invalid config for ema" };
   }() }
 {
 }
@@ -29,13 +29,13 @@ EMA::EMA(const IndicatorConfig &config)
 // Indicator methods
 
 bool
-EMA::is_ready() const
+ema::is_ready() const
 {
   return _n >= _period;
 }
 
-OHLCVIndicator::Snapshot
-EMA::read() const
+ohlcv_indicator::snapshot
+ema::read() const
 {
   if (!is_ready())
     {
@@ -48,7 +48,7 @@ EMA::read() const
 }
 
 void
-EMA::write(const OHLCV &ohlcv)
+ema::write(const ohlcv &ohlcv)
 {
   write(ohlcv.close);
 }
@@ -57,7 +57,7 @@ EMA::write(const OHLCV &ohlcv)
 // EMA methods
 
 void
-EMA::write(const double close)
+ema::write(const double close)
 {
   if (!is_ready())
     {
@@ -72,7 +72,7 @@ EMA::write(const double close)
 }
 
 std::size_t
-EMA::period() const
+ema::period() const
 {
   return _period;
 }

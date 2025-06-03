@@ -10,47 +10,47 @@
 #include <unordered_map>
 
 template <typename IndicatorInterface>
-class IndicatorRegistry
+class indicator_registry
 {
 public:
 
-  using FactoryFn = std::function<
+  using factory_fn = std::function<
     std::pair<std::string_view, std::unique_ptr<IndicatorInterface>>(
-      const IndicatorConfig &)>;
+      const indicator_config &)>;
 
-  static IndicatorRegistry &instance();
+  static indicator_registry &instance();
 
-  static void register_indicator(std::string_view name, FactoryFn factory);
+  static void register_indicator(std::string_view name, factory_fn factory);
 
   [[nodiscard]]
   static std::pair<std::string_view, std::unique_ptr<IndicatorInterface>>
-  create(const IndicatorConfig &config);
+  create(const indicator_config &config);
 
 private:
 
-  std::unordered_map<std::string, FactoryFn> _factories {};
+  std::unordered_map<std::string, factory_fn> _factories {};
 };
 
 template <typename IndicatorInterface>
-IndicatorRegistry<IndicatorInterface> &
-IndicatorRegistry<IndicatorInterface>::instance()
+indicator_registry<IndicatorInterface> &
+indicator_registry<IndicatorInterface>::instance()
 {
-  static IndicatorRegistry instance {};
+  static indicator_registry instance {};
   return instance;
 }
 
 template <typename IndicatorInterface>
 void
-IndicatorRegistry<IndicatorInterface>::register_indicator(
+indicator_registry<IndicatorInterface>::register_indicator(
   const std::string_view name,
-  FactoryFn              factory)
+  factory_fn              factory)
 {
   instance()._factories[std::string { name }] = std::move(factory);
 }
 
 template <typename IndicatorInterface>
 std::pair<std::string_view, std::unique_ptr<IndicatorInterface>>
-IndicatorRegistry<IndicatorInterface>::create(const IndicatorConfig &config)
+indicator_registry<IndicatorInterface>::create(const indicator_config &config)
 {
   const auto it { instance()._factories.find(std::string { config.name }) };
   if (it == instance()._factories.end())

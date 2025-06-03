@@ -3,19 +3,19 @@
 void
 configure_logging()
 {
-  el::Configurations defaultConf;
-  defaultConf.setToDefault();
+  el::Configurations default_conf;
+  default_conf.setToDefault();
 
-  defaultConf.set(
+  default_conf.set(
     el::Level::Global,
     el::ConfigurationType::Format,
     "%datetime %level %msg");
-  defaultConf.set(el::Level::Global, el::ConfigurationType::ToFile, "false");
-  defaultConf.set(
+  default_conf.set(el::Level::Global, el::ConfigurationType::ToFile, "false");
+  default_conf.set(
     el::Level::Global,
     el::ConfigurationType::ToStandardOutput,
     "true");
 
-  el::Loggers::reconfigureAllLoggers(defaultConf);
+  el::Loggers::reconfigureAllLoggers(default_conf);
   el::Loggers::getLogger("MACDTradingBot");
 }

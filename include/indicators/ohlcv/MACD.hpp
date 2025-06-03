@@ -6,18 +6,18 @@
 
 #include <string_view>
 
-class MACD final : public OHLCVIndicator
+class macd final : public ohlcv_indicator
 {
 public:
 
   static constexpr std::string_view name { "MACD" };
 
-  explicit MACD(
+  explicit macd(
     std::size_t fast_period   = 12,
     std::size_t slow_period   = 26,
     std::size_t signal_period = 9);
 
-  explicit MACD(const IndicatorConfig &config);
+  explicit macd(const indicator_config &config);
 
   //
   // Indicator methods
@@ -26,13 +26,13 @@ public:
   bool is_ready() const override;
 
   [[nodiscard]]
-  Snapshot read() const override;
+  snapshot read() const override;
 
-  void write(const OHLCV &ohlcv) override;
+  void write(const ohlcv &ohlcv) override;
 
 private:
 
-  EMA _fast_ema;
-  EMA _slow_ema;
-  EMA _signal_ema;
+  ema _fast_ema;
+  ema _slow_ema;
+  ema _signal_ema;
 };

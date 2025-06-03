@@ -42,7 +42,7 @@ protected:
 
     // Connect aggregator to indicator engine
     aggregator_connection = bar_aggregator->connect_aggregated_bar_handler(
-      [this](const Bar5min &aggregated_bar) {
+      [this](const bar_5min &aggregated_bar) {
         this->on_aggregated_bar(aggregated_bar);
       });
   }
@@ -54,7 +54,7 @@ protected:
   }
 
   void
-  on_aggregated_bar(const Bar5min &bar)
+  on_aggregated_bar(const bar_5min &bar)
   {
     indicator_engine->on_bar(bar);
     aggregated_bar_count++;
@@ -98,7 +98,7 @@ TEST_F(
   ASSERT_TRUE(std::filesystem::exists(csv_path))
     << "PLTR CSV file not found at: " << csv_path;
 
-  auto input_bars = createBarsFromCSV(csv_path);
+  auto input_bars = create_bars_from_csv(csv_path);
   ASSERT_GT(input_bars.size(), 0) << "No bars loaded from CSV";
 
   // Process bars through the pipeline, handling gaps gracefully
@@ -126,7 +126,7 @@ TEST_F(
                 = std::make_unique<BarAggregator<5, std::chrono::minutes>>();
               aggregator_connection
                 = bar_aggregator->connect_aggregated_bar_handler(
-                  [this](const Bar5min &aggregated_bar) {
+                  [this](const bar_5min &aggregated_bar) {
                     this->on_aggregated_bar(aggregated_bar);
                   });
               // Try this bar again with fresh aggregator

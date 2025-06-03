@@ -6,16 +6,16 @@
 #include <cstddef>
 #include <string_view>
 
-class EMA final : public OHLCVIndicator
+class ema final : public ohlcv_indicator
 {
 public:
 
-  static constexpr std::size_t SMOOTHING_FACTOR { 2 };
+  static constexpr std::size_t smoothing_factor { 2 };
 
   static constexpr std::string_view name { "EMA" };
 
-  explicit EMA(std::size_t period);
-  explicit EMA(const IndicatorConfig &config);
+  explicit ema(std::size_t period);
+  explicit ema(const indicator_config &config);
 
   //
   // Indicator methods
@@ -24,9 +24,9 @@ public:
   bool is_ready() const override;
 
   [[nodiscard]]
-  Snapshot read() const override;
+  snapshot read() const override;
 
-  void write(const OHLCV &ohlcv) override;
+  void write(const ohlcv &ohlcv) override;
 
   //
   // EMA methods
