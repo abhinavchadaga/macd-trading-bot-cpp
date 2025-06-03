@@ -89,6 +89,7 @@ function build_python_test_utils() {
 }
 
 function install_venv() {
+	echo "installing venv..."
 	local dir=$1
 	if [[ -d $dir/venv ]]; then
 		return
