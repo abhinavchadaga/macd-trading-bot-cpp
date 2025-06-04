@@ -4,6 +4,7 @@
 #include "indicators/ohlcv/MACD.hpp"
 
 #include <array>
+#include <cstddef>
 #include <gtest/gtest.h>
 #include <ta-lib/ta_libc.h>
 #include <vector>
@@ -83,14 +84,29 @@ TEST_F(IndicatorTest, EMA_CompareWithTALib)
   constexpr std::size_t period { 10 };
   constexpr double      threshold { 0.001 };
 
-  const auto ohlcv_data { createTestData() };
-  EMA        my_ema { period };
-
+  const auto          ohlcv_data { createTestData() };
+  EMA                 my_ema { period };
   std::vector<double> close_prices {};
-  for (const auto &ohlcv : ohlcv_data)
+
+  for (std::size_t i = 0; i < ohlcv_data.size(); ++i)
     {
-      close_prices.push_back(ohlcv.close);
-      my_ema.write(ohlcv);
+      close_prices.push_back(ohlcv_data[i].close);
+      my_ema.write(ohlcv_data[i]);
+
+      std::size_t current_period { i + 1 };
+      if (current_period >= period)
+        {
+          ASSERT_EQ(my_ema.is_ready(), true)
+            << "EMA should be ready when current_period >= " << period
+            << ", but is_ready() returned false at period " << current_period;
+        }
+      else
+        {
+          ASSERT_EQ(my_ema.is_ready(), false)
+            << "EMA should not be ready with less than " << period
+            << " bars, but is_ready() returned true at period "
+            << current_period;
+        }
     }
 
   std::vector<double> talib_ema(close_prices.size());
@@ -120,19 +136,34 @@ TEST_F(IndicatorTest, EMA_CompareWithTALib)
 
 TEST_F(IndicatorTest, ATR_CompareWithTALib)
 {
-  constexpr int    period { 14 };
-  constexpr double threshold { 0.001 };
+  constexpr std::size_t period { 14 };
+  constexpr double      threshold { 0.001 };
 
   const auto ohlcv_data { createTestData() };
   ATR        my_atr { period };
 
   std::vector<double> high_prices, low_prices, close_prices;
-  for (const auto &ohlcv : ohlcv_data)
+  for (std::size_t i = 0; i < ohlcv_data.size(); ++i)
     {
-      high_prices.push_back(ohlcv.high);
-      low_prices.push_back(ohlcv.low);
-      close_prices.push_back(ohlcv.close);
-      my_atr.write(ohlcv);
+      high_prices.push_back(ohlcv_data[i].high);
+      low_prices.push_back(ohlcv_data[i].low);
+      close_prices.push_back(ohlcv_data[i].close);
+      my_atr.write(ohlcv_data[i]);
+
+      std::size_t current_period { i };
+      if (current_period >= period)
+        {
+          ASSERT_EQ(my_atr.is_ready(), true)
+            << "ATR should be ready when current_period >= " << period
+            << ", but is_ready() returned false at period " << current_period;
+        }
+      else
+        {
+          ASSERT_EQ(my_atr.is_ready(), false)
+            << "ATR should not be ready with less than " << period
+            << " bars, but is_ready() returned true at period "
+            << current_period;
+        }
     }
 
   // Calculate TA-Lib ATR
@@ -165,19 +196,34 @@ TEST_F(IndicatorTest, ATR_CompareWithTALib)
 
 TEST_F(IndicatorTest, MACD_CompareWithTALib)
 {
-  constexpr int    fast_period { 3 };
-  constexpr int    slow_period { 5 };
-  constexpr int    signal_period { 2 };
-  constexpr double threshold { 0.01 };
+  constexpr std::size_t fast_period { 3 };
+  constexpr std::size_t slow_period { 5 };
+  constexpr std::size_t signal_period { 2 };
+  constexpr double      threshold { 0.01 };
 
   const auto ohlcv_data { createTestData() };
   MACD       my_macd { fast_period, slow_period, signal_period };
 
-  std::vector<double> close_prices;
-  for (const auto &ohlcv : ohlcv_data)
+  std::vector<double> close_prices {};
+  for (std::size_t i = 0; i < ohlcv_data.size(); ++i)
     {
-      close_prices.push_back(ohlcv.close);
-      my_macd.write(ohlcv);
+      close_prices.push_back(ohlcv_data[i].close);
+      my_macd.write(ohlcv_data[i]);
+      std::size_t period { i + 1 };
+      if (period >= slow_period + signal_period)
+        {
+          ASSERT_EQ(my_macd.is_ready(), true)
+            << "MACD should be ready when period >= "
+            << slow_period + signal_period
+            << ", but is_ready() returned false at period " << period;
+        }
+      else
+        {
+          ASSERT_EQ(my_macd.is_ready(), false)
+            << "MACD should not be ready with less than "
+            << slow_period + signal_period
+            << " bars, but is_ready() returned true at period " << period;
+        }
     }
 
   std::vector<double> talib_macd(close_prices.size());

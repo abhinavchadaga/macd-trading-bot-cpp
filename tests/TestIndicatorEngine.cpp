@@ -18,16 +18,16 @@ protected:
   {
     // Set up indicator configurations
     IndicatorConfig ema_config { .name   = "EMA",
-                                 .params = { { "period", 20.0 } } };
+                                 .params = { { "period", 20 } } };
 
     IndicatorConfig atr_config { .name   = "ATR",
-                                 .params = { { "period", 14.0 } } };
+                                 .params = { { "period", 14 } } };
 
     IndicatorConfig macd_config {
       .name   = "MACD",
-      .params = { { "fast_period", 12.0 },
-                 { "slow_period", 26.0 },
-                 { "signal_period", 9.0 } }
+      .params = { { "fast_period", 12 },
+                 { "slow_period", 26 },
+                 { "signal_period", 9 } }
     };
 
     indicator_configs = { ema_config, atr_config, macd_config };
@@ -39,9 +39,15 @@ protected:
       = std::make_unique<DefaultIndicatorEngine>(indicator_configs);
 
     // Connect aggregator to indicator engine
-    aggregator_connection = bar_aggregator->connect_aggregated_bar_handler(
-      [this](const Bar5min &aggregated_bar) {
-        this->on_aggregated_bar(aggregated_bar);
+    aggregator_connection
+      = bar_aggregator->subscribe([this](const Bar5min &aggregated_bar) {
+          this->on_aggregated_bar(aggregated_bar);
+        });
+
+    // Connect to indicator updates
+    indicator_connection = indicator_engine->subscribe(
+      [this](const DefaultIndicatorEngine::Snapshots &snapshots) {
+        this->on_indicator_update(snapshots);
       });
   }
 
@@ -49,37 +55,37 @@ protected:
   TearDown() override
   {
     aggregator_connection.disconnect();
+    indicator_connection.disconnect();
+  }
+
+  void
+  on_indicator_update(const DefaultIndicatorEngine::Snapshots &snapshots)
+  {
+    if (!indicators_ready)
+      {
+        indicators_ready       = true;
+        first_indicator_update = aggregated_bar_count;
+      }
+    snapshot_history.push_back(snapshots);
   }
 
   void
   on_aggregated_bar(const Bar5min &bar)
   {
+    ++aggregated_bar_count;
     indicator_engine->on_bar(bar);
-    aggregated_bar_count++;
-
-    if (indicator_engine->is_ready() && !indicators_ready)
-      {
-        indicators_ready = true;
-        ready_after_bars = aggregated_bar_count;
-      }
-
-    // Collect snapshots when indicators are ready
-    if (indicators_ready)
-      {
-        auto snapshots = indicator_engine->read();
-        snapshot_history.push_back(snapshots);
-      }
   }
 
   std::vector<IndicatorConfig>                            indicator_configs;
   std::unique_ptr<BarAggregator<5, std::chrono::minutes>> bar_aggregator;
   std::unique_ptr<DefaultIndicatorEngine>                 indicator_engine;
   boost::signals2::connection aggregator_connection;
+  boost::signals2::connection indicator_connection;
 
   // Test tracking variables
   int                                            aggregated_bar_count { 0 };
   bool                                           indicators_ready { false };
-  int                                            ready_after_bars { 0 };
+  int                                            first_indicator_update { 0 };
   std::vector<DefaultIndicatorEngine::Snapshots> snapshot_history;
 };
 
@@ -101,30 +107,23 @@ TEST_F(
   ASSERT_GT(input_bars.size(), 0) << "No bars loaded from CSV";
 
   int processed_bars = 0;
-  int skipped_bars   = 0;
-
   for (const auto &bar : input_bars)
     {
       bar_aggregator->on_bar(bar);
       processed_bars++;
     }
 
-  std::cout << "Processed " << processed_bars << " bars, skipped "
-            << skipped_bars << " due to gaps" << std::endl;
+  std::cout << "Processed " << processed_bars << " bars" << std::endl;
 
-  // Verify we produced aggregated bars
   EXPECT_GT(aggregated_bar_count, 0) << "No aggregated bars were produced";
-
-  // Verify indicators eventually became ready
   EXPECT_TRUE(indicators_ready) << "Indicators never became ready";
 
-  // Verify we got a reasonable number of bars before indicators were ready
-  // MACD with 26-period slow EMA should need ~26-35 bars to be ready
-  EXPECT_LE(ready_after_bars, 40)
-    << "Indicators took too long to become ready";
+  // Indicator Engine should be ready after receiving the 35th aggregated bar
+  EXPECT_EQ(first_indicator_update, 35)
+    << "Indicators did not become ready after expected bars";
 
-  // Verify we have a steady stream of indicator values after ready
-  const int expected_snapshots = aggregated_bar_count - ready_after_bars + 1;
+  const int expected_snapshots
+    = aggregated_bar_count - first_indicator_update + 1;
   EXPECT_EQ(snapshot_history.size(), expected_snapshots)
     << "Missing indicator snapshots after ready";
 
@@ -182,7 +181,7 @@ TEST_F(
   std::cout << "  Input bars processed: " << input_bars.size() << std::endl;
   std::cout << "  Aggregated bars produced: " << aggregated_bar_count
             << std::endl;
-  std::cout << "  Indicators ready after: " << ready_after_bars
+  std::cout << "  Indicators ready after: " << first_indicator_update
             << " aggregated bars" << std::endl;
   std::cout << "  Total indicator snapshots: " << snapshot_history.size()
             << std::endl;

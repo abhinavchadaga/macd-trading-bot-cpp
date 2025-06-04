@@ -18,7 +18,7 @@ public:
 
   void on_bar(const Bar1min &input_bar);
 
-  boost::signals2::connection connect_aggregated_bar_handler(
+  boost::signals2::connection subscribe(
     const aggregated_bar_signal_t::slot_type &handler);
 
 private:
@@ -101,7 +101,7 @@ BarAggregator<Count, TimeUnit>::on_bar(const Bar1min &input_bar)
 template <std::size_t Count, ChronoDuration TimeUnit>
   requires(Count > 0)
 inline boost::signals2::connection
-BarAggregator<Count, TimeUnit>::connect_aggregated_bar_handler(
+BarAggregator<Count, TimeUnit>::subscribe(
   const aggregated_bar_signal_t::slot_type &handler)
 {
   return _aggregated_bar_signal.connect(handler);
