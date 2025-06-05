@@ -23,6 +23,7 @@ RUN apt-get update && apt-get -y install  \
     clang \
     clangd \
     clang-format \
+    clang-tidy \
     gdb \
     valgrind \
     # project deps
