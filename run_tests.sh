@@ -2,7 +2,7 @@
 
 set -e
 
-build_type=${1:-Debug}
+build_type=${1:-Release}
 dep_install_dir=${2:-/usr/local/bin}
 
 echo "Installing dependencies to $dep_install_dir"
