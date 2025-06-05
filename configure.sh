@@ -13,5 +13,5 @@ if [[ ! -d "build/${buildType}" ]]; then
 fi
 
 echo "using build type ${buildType}"
-cmake -S . -B build/"${buildType}" -GNinja -DCMAKE_BUILD_TYPE="${buildType}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=cmake/linux-clang-gdb.cmake
+cmake -S . -B build/"${buildType}" -GNinja -DCMAKE_BUILD_TYPE="${buildType}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ln -sf build/"${buildType}"/compile_commands.json compile_commands.json

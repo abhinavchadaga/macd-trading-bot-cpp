@@ -24,7 +24,10 @@ zinit snippet OMZP::command-not-found
 
 # Load completions
 autoload -Uz compinit && compinit
-autoload -U promptinit
+
+# Load pure prompt
+fpath+=$HOME/.zsh/pure
+autoload -Uz promptinit
 promptinit
 prompt pure
 
@@ -55,7 +58,6 @@ zstyle ':completion:*' menu no
 typeset -gx EXPORTED_ALIASES
 EXPORTED_ALIASES=$(alias)
 
-# Preview can then parse this
 zstyle ':fzf-tab:complete:*:*' fzf-preview \
   'if [[ -n $word ]] && echo "$EXPORTED_ALIASES" | grep -q "^$word="; then
      echo "📋 Alias: $word"
@@ -91,5 +93,3 @@ export FZF_DEFAULT_COMMAND="fd --type file --color=always"
 export FZF_DEFAULT_OPTS="--ansi"
 export FZF_PREVIEW_COMMAND="if [[ -d {} ]]; then tree -C -L 2 {} 2>/dev/null || ls -la --color=always {}; elif [[ -f {} ]]; then bat --style=numbers --color=always {} 2>/dev/null || cat {}; else echo {}; fi"
 export FZF_CTRL_T_OPTS="--preview 'if [[ -d {} ]]; then tree -C -L 2 {} 2>/dev/null || ls -la --color=always {}; elif [[ -f {} ]]; then bat --style=numbers --color=always {} 2>/dev/null || cat {}; else echo {}; fi' --preview-window=right:60%"
-
-source <(fzf --zsh)

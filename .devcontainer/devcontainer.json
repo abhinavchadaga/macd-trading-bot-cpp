@@ -3,6 +3,9 @@
     "dockerfile": "./Dockerfile",
     "context": "."
   },
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
   "capAdd": [
     "SYS_PTRACE"
   ],
@@ -20,6 +23,7 @@
         "twxs.cmake",
         "josetr.cmake-language-support-vscode",
         "cheshirekow.cmake-format",
+        "zchrissirhcz.cmake-highlight",
         // PYTHON
         "ms-python.vscode-pylance",
         "charliermarsh.ruff",
@@ -36,7 +40,7 @@
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
-        "cmake.languageSupport.dotnetPath": "/root/.dotnet/dotnet"
+        "cmake.languageSupport.dotnetPath": "/usr/bin/dotnet"
       }
     }
   },

@@ -78,23 +78,5 @@
                 "panel": "shared"
             }
         },
-        {
-            "label": "cmake build",
-            "type": "shell",
-            "command": [
-                "bash",
-                "./build.sh"
-            ],
-            "problemMatcher": [],
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared",
-                "close": true
-            },
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        }
     ]
 }

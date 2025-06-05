@@ -1,76 +1,91 @@
-FROM fedora:42
+FROM ubuntu:24.04
 
-# Install system packages
-RUN dnf update -y && dnf install -y \
-    # Package groups for basic tools
-    @standard \
-    @c-development \
-    @development-tools \
-    @development-libs \
-    # C/C++ specific tools
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Chicago
+
+RUN apt-get update && apt-get -y install  \
+    # basic dev tools
+    build-essential \
+    software-properties-common \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    wget \
+    gnupg \
+    lsb-release \
+    git \
+    man-db \
+    less \
+    vim \
+    # c/c++
     cmake \
     ninja-build \
-    valgrind \
-    clang-tools-extra \
     clang \
-    cppcheck \
-    # Project dependencies
-    boost-devel \
-    gtest-devel \
-    nlohmann_json-devel \
-    pkgconf \
-    perl-FindBin \
-    perl-IPC-Cmd \
-    openssl-devel \
-    openssl \
-    # Python tools
-    python3-devel \
-    python3-pip \
-    mypy \
-    ruff \
-    # Node.js and npm
-    nodejs \
-    # locale stuff
-    glibc-langpack-en \
-    # Rust
-    cargo \
-    rust \
-    # Modern shell/dev utilities
+    clangd \
+    clang-format \
+    gdb \
+    valgrind \
+    # project deps
+    libboost-all-dev \
+    libgtest-dev \
+    nlohmann-json3-dev \
+    libssl-dev \
+    pkg-config \
+    # python
+    python3-dev \
+    python3-venv \
+    # misc
     zsh \
-    bat \
-    fd-find \
     tree \
-    ripgrep \
-    fzf \
-    zoxide \
-    # Linters and formatters
-    pre-commit \
-    shfmt \
-    ShellCheck \
-    pre-commit \
-    yamllint \
     jq && \
-    dnf clean all
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy zshrc and set zsh as default shell
+# install rust tools
+RUN curl -fsSL https://apt.cli.rs/pubkey.asc | tee -a /usr/share/keyrings/rust-tools.asc && \
+    curl -fsSL https://apt.cli.rs/rust-tools.list | tee /etc/apt/sources.list.d/rust-tools.list && \
+    apt-get update && \
+    apt-get install -y bat \
+    fd \
+    ripgrep \
+    watchexec-cli \
+    zoxide
+
 COPY .zshrc /root/.zshrc
 RUN chsh -s $(which zsh)
 
-# Install npm packages
-RUN npm install -g @anthropic-ai/claude-code pure-prompt
+# install fzf from source
+RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && \
+    ~/.fzf/install
 
-# Set locale
+# install pure prompt
+RUN mkdir -p "$HOME/.zsh" && \
+    git clone https://github.com/sindresorhus/pure.git "$HOME/.zsh/pure"
+
+
+# install pipx
+RUN apt-get install -y pipx
+RUN pipx ensurepath
+
+# Install additional Python packages via pipx
+RUN pipx install ruff pre-commit
+
+# unminimize
+RUN apt-get update && \
+    apt-get install -y unminimize \
+    && rm -rf /var/lib/apt/lists/* \
+    && yes | unminimize
+
+# Generate and set locale
+RUN apt-get update && apt-get install locales
+RUN locale-gen en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
-# Install dotnet 6 for CMake Language Support
-RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh && \
-    chmod +x dotnet-install.sh && \
-    ./dotnet-install.sh --runtime dotnet --channel 6.0 && \
-    rm -rf ./dotnet-install.sh
-
-# Install file watcher for cmake configure task
-RUN cargo install --locked watchexec-cli
+# Install dotnet 6 sdk for vscode cmake extension
+RUN add-apt-repository ppa:dotnet/backports && \
+    apt-get update && \
+    apt-get install -y dotnet-sdk-6.0
 
 # Install TA-Lib from source
 RUN wget https://github.com/ta-lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-src.tar.gz && \
@@ -78,8 +93,8 @@ RUN wget https://github.com/ta-lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-
     cd ta-lib-0.6.4 && \
     ./configure && \
     make -j $(nproc) && \
-    make install
+    make install && \
+    cd .. && \
+    rm -rf ta-lib-0.6.4 ta-lib-0.6.4-src.tar.gz
 
-ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
-
-WORKDIR /workspaces
+WORKDIR /workspace
