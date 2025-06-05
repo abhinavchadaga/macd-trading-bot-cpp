@@ -7,7 +7,8 @@ if [[ -z $INSTALL_PREFIX ]]; then
 	INSTALL_PREFIX="/usr/local/bin"
 fi
 
-echo "INSTALL_PREFIX: $INSTALL_PREFIX"
+echo "Installing to $INSTALL_PREFIX"
+echo ""
 
 function install_py_util() {
 	local script_name=$1
@@ -34,7 +35,7 @@ function install_py_util() {
 		exit 1
 	}
 	deactivate
-	echo "Installed $script_name to $output_path"
+	echo "installed $script_name to $output_path"
 }
 
 function install_bash_script() {
@@ -58,7 +59,11 @@ function install_bash_script() {
 }
 
 function install_venv() {
-	echo "installing venv..."
+	echo "--------------------------------"
+	echo "Setting up new venv..."
+	echo "--------------------------------"
+	echo ""
+
 	rm -rf venv
 	python3 -m venv venv
 	# shellcheck disable=SC1091
@@ -66,8 +71,12 @@ function install_venv() {
 		echo "Failed to activate virtual environment"
 		exit 1
 	}
-	python3 -m pip install --quiet --upgrade pyinstaller
-	python3 -m pip install --quiet --upgrade -r requirements.txt || {
+	python3 -m pip install --upgrade pyinstaller || {
+		echo "Failed to install pyinstaller"
+		deactivate
+		exit 1
+	}
+	python3 -m pip install --upgrade -r requirements.txt || {
 		echo "Failed to install requirements"
 		deactivate
 		exit 1
@@ -75,19 +84,47 @@ function install_venv() {
 }
 
 install_venv
+echo ""
+
+echo "--------------------------------"
+echo "Installing python utilities..."
+echo "--------------------------------"
+echo ""
+
 python_utils=$(find . -maxdepth 1 -name '*.py' | sed 's/\.\///g' | sort)
 
+echo "found python utils: "
+echo "${python_utils[@]}"
+echo ""
+
 for script in $python_utils; do
-	echo "processing $script..."
+	echo "compiling and installing $script..."
 	install_py_util "$script"
 done
 
+echo ""
+
+echo "--------------------------------"
+echo "Installing bash scripts..."
+echo "--------------------------------"
+echo ""
+
 bash_scripts=$(find . -maxdepth 1 -name '*.sh' | sed 's/\.\///g' | sort)
+
+echo "found bash scripts: "
+echo "${bash_scripts[@]}"
+echo ""
 
 for script in $bash_scripts; do
 	if [[ $script == "install.sh" ]]; then
 		continue
 	fi
-	echo "processing $script..."
+	echo "installing $script..."
 	install_bash_script "$script"
 done
+
+echo ""
+
+echo "--------------------------------"
+echo "Install Complete!!!"
+echo "--------------------------------"
