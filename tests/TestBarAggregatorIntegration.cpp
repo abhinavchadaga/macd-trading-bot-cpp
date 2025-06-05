@@ -1,14 +1,13 @@
 #include "AlpacaWSMarketFeed.hpp"
 #include "Bar.hpp"
 #include "BarAggregator.hpp"
+#include "HistoricalDataTestUtils.hpp"
 #include "LoggingUtils.hpp"
 
 #include <atomic>
 #include <boost/asio.hpp>
 #include <chrono>
-#include <filesystem>
 #include <gtest/gtest.h>
-#include <sstream>
 #include <thread>
 
 using namespace std::chrono;
@@ -27,25 +26,8 @@ protected:
   void
   TearDown() override
   {
-    cleanup_historical_script();
+    HistoricalDataTestUtils::cleanup_historical_server();
     _ioc.reset();
-  }
-
-  static void
-  start_historical_script()
-  {
-    const std::string start_cmd
-      = "run_historical_client PLTR 2025-05-19 2025-05-23 &";
-    std::system(start_cmd.c_str());
-
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-  }
-
-  static void
-  cleanup_historical_script()
-  {
-    std::system("pkill -f run_historical_client || true");
-    std::this_thread::sleep_for(std::chrono::seconds(3));
   }
 
   static AlpacaWSMarketFeed::config
@@ -69,16 +51,17 @@ protected:
     std::atomic minute_bar_count { 0 };
     std::atomic aggregated_bar_count { 0 };
 
-    start_historical_script();
+    HistoricalDataTestUtils::start_historical_server(
+      "PLTR",
+      "2025-05-19",
+      "2025-05-20",
+      "0.1");
 
     const auto         config = get_test_config();
     AlpacaWSMarketFeed feed { *_ioc, config };
 
     auto feed_connection = feed.connect_bar_handler([&](const Bar1min &b) {
       ++minute_bar_count;
-      LOG_INFO(BarAggregatorIntegrationTest, run_aggregation_test)
-        << test_name << " - Received 1-minute bar " << minute_bar_count.load()
-        << ": " << b.symbol() << " at " << b.close();
       aggregator.on_bar(b);
 
       if (minute_bar_count.load() >= minute_bars_to_collect)
@@ -89,10 +72,6 @@ protected:
 
     auto aggregator_connection = aggregator.subscribe([&](const BarType &b) {
       ++aggregated_bar_count;
-      LOG_INFO(BarAggregatorIntegrationTest, run_aggregation_test)
-        << test_name << " - Received aggregated bar "
-        << aggregated_bar_count.load() << ": " << b.symbol() << " at "
-        << b.close() << " (vol: " << b.volume() << ")";
     });
 
     feed.start();

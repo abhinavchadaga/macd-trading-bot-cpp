@@ -1,12 +1,12 @@
 #include "AlpacaWSMarketFeed.hpp"
 #include "Bar.hpp"
+#include "HistoricalDataTestUtils.hpp"
 #include "LoggingUtils.hpp"
 
 #include <atomic>
 #include <boost/asio.hpp>
 #include <chrono>
 #include <cstdlib>
-#include <filesystem>
 #include <gtest/gtest.h>
 #include <sstream>
 #include <thread>
@@ -103,10 +103,7 @@ TEST_F(AlpacaWSMarketFeedTest, HistoricalDataFeedTest)
   std::atomic              received_bars { 0 };
   std::vector<std::string> bar_strings;
 
-  const std::string cmd = "run_historical_client PLTR 2025-05-19 2025-05-23 &";
-  std::system(cmd.c_str());
-
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  HistoricalDataTestUtils::start_historical_server();
 
   const AlpacaWSMarketFeed::config config { .api_key    = "test_key",
                                             .api_secret = "test_secret",
@@ -159,8 +156,7 @@ TEST_F(AlpacaWSMarketFeedTest, HistoricalDataFeedTest)
       io_thread.join();
     }
 
-  std::system("pkill -f run_historical_client.sh || true");
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  HistoricalDataTestUtils::cleanup_historical_server();
 
   EXPECT_EQ(received_bars.load(), 10)
     << "Should have received exactly 10 bars";
