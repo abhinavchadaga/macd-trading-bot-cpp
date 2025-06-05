@@ -16,6 +16,10 @@ parse_helper(const std::string &timestamp, const char *fmt_string)
 
   std::tm tm {};
   ss >> std::get_time(&tm, fmt_string);
+  if (ss.fail())
+    {
+      throw std::invalid_argument { "Invalid timestamp format" };
+    }
 
   time_t epoch_ns { timegm(&tm) };
   auto   ts { std::chrono::system_clock::from_time_t(epoch_ns) };
