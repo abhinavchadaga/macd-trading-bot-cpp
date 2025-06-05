@@ -54,9 +54,7 @@ function install_bash_script() {
 
 function install_venv() {
 	echo "installing venv..."
-	if [[ -d "venv" ]]; then
-		return
-	fi
+	rm -rf venv
 	python3 -m venv venv
 	# shellcheck disable=SC1091
 	source venv/bin/activate || {
@@ -72,19 +70,16 @@ function install_venv() {
 }
 
 install_venv
-python_utils=$(find . -maxdepth 1 -name '*.py' | sed 's/\.\///g')
-echo "${python_utils}"
+python_utils=$(find . -maxdepth 1 -name '*.py' | sed 's/\.\///g' | sort)
 
 for script in $python_utils; do
 	echo "processing $script..."
 	install_py_util "$script"
 done
 
-bash_scripts=$(find . -maxdepth 1 -name '*.sh' | sed 's/\.\///g')
-echo "${bash_scripts}"
+bash_scripts=$(find . -maxdepth 1 -name '*.sh' | sed 's/\.\///g' | sort)
 
 for script in $bash_scripts; do
-	# Avoid reinstalling the main install.sh script itself if it's in the same directory
 	if [[ $script == "install.sh" ]]; then
 		continue
 	fi
