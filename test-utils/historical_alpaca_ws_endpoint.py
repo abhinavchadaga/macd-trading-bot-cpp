@@ -3,6 +3,7 @@ import asyncio
 import csv
 import json
 import logging
+import signal
 import ssl
 import sys
 from datetime import datetime, timezone
@@ -11,6 +12,9 @@ from typing import Optional, cast
 
 from websockets.asyncio.server import ServerConnection, serve
 from cprint import cprint
+
+
+logger = logging.getLogger("HistoricalAlpacaWSEndpoint")
 
 
 class HistoricalAlpacaWSEndpoint:
@@ -31,7 +35,6 @@ class HistoricalAlpacaWSEndpoint:
         logging.basicConfig(
             level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
         )
-        self._logger = logging.getLogger(__name__)
         self._load_bars()
         self._symbol = self._bars[0]["S"]
         self._ssl_context = self._create_ssl_context()
@@ -46,7 +49,7 @@ class HistoricalAlpacaWSEndpoint:
         key_file = Path(__file__).parent / "server.key"
 
         if not cert_file.exists() or not key_file.exists():
-            self._logger.info("Generating self-signed certificate...")
+            logger.info("Generating self-signed certificate...")
             self._generate_self_signed_cert(cert_file, key_file)
 
         ssl_context.load_cert_chain(cert_file, key_file)
@@ -77,10 +80,10 @@ class HistoricalAlpacaWSEndpoint:
                 check=True,
                 capture_output=True,
             )
-            self._logger.info(f"Generated certificate: {cert_file}")
-            self._logger.info(f"Generated key: {key_file}")
+            logger.info(f"Generated certificate: {cert_file}")
+            logger.info(f"Generated key: {key_file}")
         except subprocess.CalledProcessError as e:
-            self._logger.error(f"Failed to generate certificate: {e}")
+            logger.error(f"Failed to generate certificate: {e}")
             raise
 
     def _load_bars(self) -> None:
@@ -88,7 +91,7 @@ class HistoricalAlpacaWSEndpoint:
         if not self._csv_path.exists():
             raise FileNotFoundError(f"CSV file not found: {self._csv_path}")
 
-        self._logger.info(f"Loading bars from {self._csv_path}")
+        logger.info(f"Loading bars from {self._csv_path}")
 
         with open(self._csv_path, "r") as f:
             reader = csv.DictReader(f)
@@ -96,7 +99,7 @@ class HistoricalAlpacaWSEndpoint:
                 bar = self._convert_csv_row_to_alpaca_format(row)
                 self._bars.append(bar)
 
-        self._logger.info(f"Loaded {len(self._bars)} bars")
+        logger.info(f"Loaded {len(self._bars)} bars")
 
     def _convert_csv_row_to_alpaca_format(
         self, row: dict[str, str]
@@ -112,7 +115,7 @@ class HistoricalAlpacaWSEndpoint:
             )
             timestamp_rfc3339 = timestamp_rfc3339.replace("+00:00", "Z")
         except Exception as e:
-            self._logger.error(f"Failed to parse timestamp '{timestamp_str}': {e}")
+            logger.error(f"Failed to parse timestamp '{timestamp_str}': {e}")
 
         return {
             "T": "b",
@@ -179,7 +182,7 @@ class HistoricalAlpacaWSEndpoint:
                 await websocket.send(json.dumps(msg))
                 await asyncio.sleep(delay=self._delay_seconds)
         except Exception as e:
-            self._logger.info(f"Client disconnected during streaming: {e}")
+            logger.warning(f"Client disconnected during streaming: {e}")
             return
 
     async def run(self, websocket: ServerConnection):
@@ -188,9 +191,11 @@ class HistoricalAlpacaWSEndpoint:
 
     async def main(self):
         async with serve(
-            self.run, "localhost", port=8765, ssl=self._ssl_context
+            self.run, "127.0.0.1", port=8765, ssl=self._ssl_context
         ) as server:
-            await server.serve_forever()
+            loop = asyncio.get_event_loop()
+            loop.add_signal_handler(signal.SIGTERM, server.close)
+            await server.wait_closed()
 
 
 def main():
@@ -208,37 +213,28 @@ def main():
 
     args = parser.parse_args()
 
-    import signal
-
-    def signal_handler(signum: int, _):
-        print(f"Received signal {signum}, shutting down gracefully...")
-        raise KeyboardInterrupt
-
-    signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
-
     try:
         endpoint = HistoricalAlpacaWSEndpoint(args.csv_path, args.delay)
         asyncio.run(endpoint.main())
     except FileNotFoundError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        logger.error(f"Error: {e}")
         sys.exit(1)
     except KeyboardInterrupt:
-        print("Server stopped.")
+        logger.info("Server stopped.")
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
+        logger.error(f"Error: {e}")
         sys.exit(1)
     finally:
         cert_file = Path(__file__).parent / "server.crt"
         key_file = Path(__file__).parent / "server.key"
         if cert_file.exists():
             cert_file.unlink()
-            print(f"Cleaned up certificate: {cert_file}")
+            logger.info(f"Cleaned up certificate: {cert_file}")
         if key_file.exists():
             key_file.unlink()
-            print(f"Cleaned up key: {key_file}")
+            logger.info(f"Cleaned up key: {key_file}")
 
-        print("Graceful shutdown complete.")
+        logger.info("Graceful shutdown complete.")
 
 
 if __name__ == "__main__":

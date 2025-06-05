@@ -201,18 +201,20 @@ WebSocketSession::on_handshake(const beast::error_code &ec)
 
 void
 WebSocketSession::do_read()
-{ // NOLINT (misc-no-recursion)
+{                                // NOLINT (misc-no-recursion)
   _ws.async_read(
-      _buffer,
-      [self = shared_from_this()](  // NOLINT (misc-no-recursion)
-          const beast::error_code& ec, const std::size_t bytes_transferred) {
-        self->on_read(ec, bytes_transferred);
-      });
+    _buffer,
+    [self = shared_from_this()]( // NOLINT (misc-no-recursion)
+      const beast::error_code &ec,
+      const std::size_t bytes_transferred) {
+      self->on_read(ec, bytes_transferred);
+    });
 }
 
-void WebSocketSession::on_read(  // NOLINT (misc-no-recursion)
-    const beast::error_code& ec,
-    std::size_t bytes_transferred)
+void
+WebSocketSession::on_read( // NOLINT (misc-no-recursion)
+  const beast::error_code &ec,
+  std::size_t              bytes_transferred)
 {
   boost::ignore_unused(bytes_transferred);
 
@@ -224,7 +226,6 @@ void WebSocketSession::on_read(  // NOLINT (misc-no-recursion)
   if (_frame_handler)
     {
       const auto data = beast::buffers_to_string(_buffer.data());
-      LOG_INFO(WebSocketSession, on_read) << data;
       _frame_handler(data);
     }
 
@@ -239,16 +240,18 @@ WebSocketSession::do_write()
     return;
 
   _ws.async_write(
-      net::buffer(_write_queue.front()),
-      [self = shared_from_this()](  // NOLINT (misc-no-recursion)
-          const beast::error_code& ec, std::size_t bytes_transferred) {
-        self->on_write(ec, bytes_transferred);
-      });
+    net::buffer(_write_queue.front()),
+    [self = shared_from_this()]( // NOLINT (misc-no-recursion)
+      const beast::error_code &ec,
+      std::size_t bytes_transferred) {
+      self->on_write(ec, bytes_transferred);
+    });
 }
 
-void WebSocketSession::on_write(  // NOLINT (misc-no-recursion)
-    const beast::error_code& ec,
-    std::size_t bytes_transferred)
+void
+WebSocketSession::on_write( // NOLINT (misc-no-recursion)
+  const beast::error_code &ec,
+  std::size_t              bytes_transferred)
 {
   boost::ignore_unused(bytes_transferred);
 

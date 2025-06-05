@@ -18,7 +18,6 @@ protected:
   {
     test_csv_file_path = "/tmp/test_bars_utils.csv";
 
-    // Generate test data using the Python executable
     std::string command
       = "historical_bars_to_csv PLTR 2024-01-02 "
         "2024-01-03 --limit 10 --output "

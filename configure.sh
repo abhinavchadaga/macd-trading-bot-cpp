@@ -1,17 +1,32 @@
 #!/usr/bin/env bash
 
-# configure cmake
+set -e
 
-buildType=$1
+buildType=${1:-Debug}
+buildDir="build/${buildType}"
 
-if [[ -z $1 ]]; then
-	buildType="Debug"
+if [[ ! -d ${buildDir} ]]; then
+	mkdir -p "${buildDir}"
 fi
 
-if [[ ! -d "build/${buildType}" ]]; then
-	mkdir -p build/"${buildType}"
-fi
+echo "--------------------------------"
+echo "CMake Configure: ${buildType}"
+echo "--------------------------------"
+echo ""
 
-echo "using build type ${buildType}"
-cmake -S . -B build/"${buildType}" -GNinja -DCMAKE_BUILD_TYPE="${buildType}" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=cmake/linux-clang-gdb.cmake
-ln -sf build/"${buildType}"/compile_commands.json compile_commands.json
+cmake -S . -B "$buildDir" -GNinja -DCMAKE_BUILD_TYPE="$buildType" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+echo ""
+echo "--------------------------------"
+echo "Linking compile_commands.json"
+echo "--------------------------------"
+echo ""
+
+echo "Linking: build/$buildType/compile_commands.json -> compile_commands.json"
+ln -sf build/"$buildType"/compile_commands.json compile_commands.json
+
+echo ""
+echo "--------------------------------"
+echo "CMake Configure Complete!!!"
+echo "--------------------------------"
+echo ""

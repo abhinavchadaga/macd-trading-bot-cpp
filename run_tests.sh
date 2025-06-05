@@ -1,12 +1,25 @@
 #!/usr/bin/env bash
 
-./configure.sh Debug
-build_cmd="./build.sh Debug unit_tests"
+set -e
 
-if ! $build_cmd; then
-	echo "Build failed. Exiting."
-	exit 1
-fi
+build_type=${1:-Release}
+dep_install_dir=${2:-/usr/local/bin}
 
-./test-utils/install.sh
-./build/Debug/tests/unit_tests
+echo "Installing dependencies to $dep_install_dir"
+
+echo ""
+echo "--------------------------------"
+echo "Running unit_tests"
+echo "--------------------------------"
+echo ""
+
+./test-utils/install.sh "$dep_install_dir"
+./build.sh "$build_type" unit_tests
+
+echo ""
+echo "--------------------------------"
+echo "Running unit_tests..."
+echo "--------------------------------"
+echo ""
+
+./build/"$build_type"/tests/unit_tests

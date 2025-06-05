@@ -2,7 +2,15 @@
 
 cd "$(dirname "$0")" || exit 1
 
-INSTALL_PREFIX="/usr/local/bin"
+INSTALL_PREFIX="$1"
+if [[ -z $INSTALL_PREFIX ]]; then
+	INSTALL_PREFIX="/usr/local/bin"
+fi
+
+echo "--------------------------------"
+echo "Installing test-utils to $INSTALL_PREFIX"
+echo "--------------------------------"
+echo ""
 
 function install_py_util() {
 	local script_name=$1
@@ -29,7 +37,7 @@ function install_py_util() {
 		exit 1
 	}
 	deactivate
-	echo "Installed $script_name to $output_path"
+	echo "installed $script_name to $output_path"
 }
 
 function install_bash_script() {
@@ -53,18 +61,24 @@ function install_bash_script() {
 }
 
 function install_venv() {
-	echo "installing venv..."
-	if [[ -d "venv" ]]; then
-		return
-	fi
+	echo "--------------------------------"
+	echo "Setting up new venv..."
+	echo "--------------------------------"
+	echo ""
+
+	rm -rf venv
 	python3 -m venv venv
 	# shellcheck disable=SC1091
 	source venv/bin/activate || {
 		echo "Failed to activate virtual environment"
 		exit 1
 	}
-	python3 -m pip install --quiet --upgrade pyinstaller
-	python3 -m pip install --quiet --upgrade -r requirements.txt || {
+	python3 -m pip install --upgrade pyinstaller || {
+		echo "Failed to install pyinstaller"
+		deactivate
+		exit 1
+	}
+	python3 -m pip install --upgrade -r requirements.txt || {
 		echo "Failed to install requirements"
 		deactivate
 		exit 1
@@ -72,22 +86,47 @@ function install_venv() {
 }
 
 install_venv
-python_utils=$(find . -maxdepth 1 -name '*.py' | sed 's/\.\///g')
-echo "${python_utils}"
+echo ""
+
+echo "--------------------------------"
+echo "Installing python utilities..."
+echo "--------------------------------"
+echo ""
+
+python_utils=$(find . -maxdepth 1 -name '*.py' | sed 's/\.\///g' | sort)
+
+echo "found python utils: "
+echo "${python_utils[@]}"
+echo ""
 
 for script in $python_utils; do
-	echo "processing $script..."
+	echo "compiling and installing $script..."
 	install_py_util "$script"
 done
 
-bash_scripts=$(find . -maxdepth 1 -name '*.sh' | sed 's/\.\///g')
-echo "${bash_scripts}"
+echo ""
+
+echo "--------------------------------"
+echo "Installing bash scripts..."
+echo "--------------------------------"
+echo ""
+
+bash_scripts=$(find . -maxdepth 1 -name '*.sh' | sed 's/\.\///g' | sort)
+
+echo "found bash scripts: "
+echo "${bash_scripts[@]}"
+echo ""
 
 for script in $bash_scripts; do
-	# Avoid reinstalling the main install.sh script itself if it's in the same directory
 	if [[ $script == "install.sh" ]]; then
 		continue
 	fi
-	echo "processing $script..."
+	echo "installing $script..."
 	install_bash_script "$script"
 done
+
+echo ""
+
+echo "--------------------------------"
+echo "Install Complete!!!"
+echo "--------------------------------"

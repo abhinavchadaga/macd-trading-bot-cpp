@@ -5,8 +5,8 @@ echo "Setting up pre-commit hooks for C++ project..."
 
 # Install pre-commit if not already installed
 if ! command -v pre-commit &>/dev/null; then
-	echo "Installing pre-commit..."
-	dnf install -y pre-commit || apt-get install -y pre-commit || brew install pre-commit
+	echo "pre-commit not found"
+	exit 1
 fi
 
 # Install hooks

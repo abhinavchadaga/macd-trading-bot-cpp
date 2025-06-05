@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 
-buildType="$1"
-target="$2"
+set -e
 
-if [[ -z $buildType ]]; then
-	buildType="Debug"
-fi
-
-if [[ -z $target ]]; then
-	target="all"
-fi
+buildType=${1:-Debug}
+buildDir="build/${buildType}"
+target=${2:-all}
 
 ./configure.sh "$buildType"
-cmake --build build/"$buildType" --target "$target"
+
+echo "--------------------------------"
+echo "CMake Build: ${buildType}"
+echo "--------------------------------"
+
+cmake --build "$buildDir" --target "$target"
+
+echo ""
+echo "--------------------------------"
+echo "Build Complete!!!"
+echo "--------------------------------"

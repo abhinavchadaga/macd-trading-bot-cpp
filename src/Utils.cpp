@@ -3,26 +3,42 @@
 #include "Bar.hpp"
 
 #include <chrono>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <sstream>
 #include <vector>
 
 Bar1min::Timestamp
+parse_helper(const std::string &timestamp, const char *fmt_string)
+{
+  std::stringstream ss { timestamp };
+
+  std::tm tm {};
+  ss >> std::get_time(&tm, fmt_string);
+  if (ss.fail())
+    {
+      throw std::invalid_argument { "Invalid timestamp format" };
+    }
+
+  time_t epoch_ns { timegm(&tm) };
+  auto   ts { std::chrono::system_clock::from_time_t(epoch_ns) };
+
+  return { std::chrono::time_point_cast<std::chrono::minutes>(ts) };
+}
+
+Bar1min::Timestamp
 parseRFC3339UTCTimestamp(const std::string &timestamp)
 {
-  std::chrono::sys_seconds tp {};
-  std::istringstream       ss { timestamp };
-
-  // Try different UTC formats
   if (timestamp.ends_with('Z') || timestamp.ends_with('z'))
     {
       // Format: 2025-05-19T13:30:00Z
-      std::chrono::from_stream(ss, "%Y-%m-%dT%H:%M:%SZ", tp);
+      return parse_helper(timestamp, "%Y-%m-%dT%H:%M:%S");
     }
   else if (timestamp.ends_with("+00:00"))
     {
-      // Format: 2025-05-19 13:30:00+00:00 (space instead of T)
-      std::chrono::from_stream(ss, "%Y-%m-%d %H:%M:%S+00:00", tp);
+      // Format: 2025-05-19 13:30:00+00:00
+      return parse_helper(timestamp, "%Y-%m-%d %H:%M:%S");
     }
   else
     {
@@ -31,12 +47,7 @@ parseRFC3339UTCTimestamp(const std::string &timestamp)
       };
     }
 
-  if (ss.fail())
-    {
-      throw std::invalid_argument { "Malformed timestamp: " + timestamp };
-    }
-
-  return std::chrono::time_point_cast<std::chrono::minutes>(tp);
+  return {};
 }
 
 Bar1min
