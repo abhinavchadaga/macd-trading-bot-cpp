@@ -6,6 +6,7 @@ add_executable(unit_tests
         TestUtils.cpp
         TestIndicators.cpp
         TestIndicatorEngine.cpp
+        TestStrategy.cpp
 )
 target_link_libraries(unit_tests
         PUBLIC
@@ -15,6 +16,7 @@ target_link_libraries(unit_tests
         AlpacaMarketFeed
         Utils
         Indicators
+        Strategy
         GTest::gtest_main
 )
 

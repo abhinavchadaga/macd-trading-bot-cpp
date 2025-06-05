@@ -15,6 +15,9 @@ add_library(Utils OBJECT Utils.cpp)
 add_library(AlpacaMarketFeed OBJECT AlpacaWSMarketFeed.cpp)
 target_link_libraries(AlpacaMarketFeed PUBLIC WebSocketSession nlohmann_json::nlohmann_json Utils)
 
+add_library(Strategy OBJECT Strategy.cpp)
+target_link_libraries(Strategy PUBLIC LoggingUtils)
+
 file(GLOB INDICATORS_SRCS indicators/*.cpp)
 add_library(Indicators OBJECT ${INDICATORS_SRCS})
 target_include_directories(Indicators PUBLIC ${CMAKE_SOURCE_DIR}/include)
