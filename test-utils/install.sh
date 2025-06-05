@@ -2,7 +2,12 @@
 
 cd "$(dirname "$0")" || exit 1
 
-INSTALL_PREFIX="/usr/local/bin"
+INSTALL_PREFIX="$1"
+if [[ -z $INSTALL_PREFIX ]]; then
+	INSTALL_PREFIX="/usr/local/bin"
+fi
+
+echo "INSTALL_PREFIX: $INSTALL_PREFIX"
 
 function install_py_util() {
 	local script_name=$1
