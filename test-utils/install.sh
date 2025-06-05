@@ -7,7 +7,9 @@ if [[ -z $INSTALL_PREFIX ]]; then
 	INSTALL_PREFIX="/usr/local/bin"
 fi
 
-echo "Installing to $INSTALL_PREFIX"
+echo "--------------------------------"
+echo "Installing test-utils to $INSTALL_PREFIX"
+echo "--------------------------------"
 echo ""
 
 function install_py_util() {
