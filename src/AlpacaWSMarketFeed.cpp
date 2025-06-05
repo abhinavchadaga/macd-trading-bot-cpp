@@ -199,17 +199,18 @@ AlpacaWSMarketFeed::send_subscription_message()
 void
 AlpacaWSMarketFeed::parse_bar_message(const nlohmann::json &message)
 {
+  LOG_INFO(AlpacaWSMarketFeed, parse_bar_message) << message.dump();
   try
     {
-      const std::string symbol        = message["S"];
-      const double      open          = message["o"];
-      const double      high          = message["h"];
-      const double      low           = message["l"];
-      const double      close         = message["c"];
-      const uint64_t    volume        = message["v"];
-      const std::string timestamp_str = message["t"];
-
+      const std::string  symbol        = message["S"];
+      const double       open          = message["o"];
+      const double       high          = message["h"];
+      const double       low           = message["l"];
+      const double       close         = message["c"];
+      const uint64_t     volume        = message["v"];
+      const std::string  timestamp_str = message["t"];
       Bar1min::Timestamp timestamp { parseRFC3339UTCTimestamp(timestamp_str) };
+
       Bar1min newBar { symbol, open, high, low, close, volume, timestamp };
       _bar_signal(newBar);
     }
@@ -217,8 +218,6 @@ AlpacaWSMarketFeed::parse_bar_message(const nlohmann::json &message)
     {
       LOG_ERROR(AlpacaWSMarketFeed, parse_bar_message)
         << "Error parsing bar message: " << e.what();
-      LOG_ERROR(AlpacaWSMarketFeed, parse_bar_message)
-        << "Message: " << message.dump();
     }
 }
 
