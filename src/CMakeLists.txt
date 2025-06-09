@@ -1,20 +1,29 @@
-add_library(LoggingUtils OBJECT LoggingUtils.cpp)
-target_link_libraries(LoggingUtils PUBLIC easylogging)
-
-add_library(WebSocketSession OBJECT WebSocketSession.cpp)
-target_link_libraries(WebSocketSession
-        PUBLIC
-        Boost::system
-        OpenSSL::SSL
-        OpenSSL::Crypto
-        LoggingUtils
+# Collect all source files
+file(GLOB_RECURSE MACD_TRADING_BOT_SRCS 
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/indicators/*.cpp"
 )
 
-add_library(Utils OBJECT Utils.cpp)
+# Create the main static library
+add_library(macd-trading-bot STATIC ${MACD_TRADING_BOT_SRCS})
 
-add_library(AlpacaMarketFeed OBJECT AlpacaWSMarketFeed.cpp)
-target_link_libraries(AlpacaMarketFeed PUBLIC WebSocketSession nlohmann_json::nlohmann_json Utils)
+# Link all required dependencies
+target_link_libraries(macd-trading-bot 
+    PUBLIC
+    easylogging
+    Boost::system
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    nlohmann_json::nlohmann_json
+)
 
-file(GLOB INDICATORS_SRCS indicators/*.cpp)
-add_library(Indicators OBJECT ${INDICATORS_SRCS})
-target_include_directories(Indicators PUBLIC ${CMAKE_SOURCE_DIR}/include)
+# Set include directories
+target_include_directories(macd-trading-bot 
+    PUBLIC 
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/third-party
+)
+
+# Link TA-Lib for indicators
+pkg_check_modules(TALIB REQUIRED IMPORTED_TARGET ta-lib)
+target_link_libraries(macd-trading-bot PUBLIC PkgConfig::TALIB)

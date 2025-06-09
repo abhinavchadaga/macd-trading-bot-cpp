@@ -1,30 +1,39 @@
-add_executable(unit_tests
-        TestWebSocketSession.cpp
-        TestAlpacaWSMarketFeed.cpp
-        TestBarAggregatorIntegration.cpp
-        TestBar.cpp
-        TestUtils.cpp
-        TestIndicators.cpp
-        TestIndicatorEngine.cpp
+# List of test files
+set(TEST_FILES
+    TestWebSocketSession.cpp
+    TestAlpacaWSMarketFeed.cpp
+    TestBarAggregatorIntegration.cpp
+    TestBar.cpp
+    TestUtils.cpp
+    TestIndicators.cpp
+    TestIndicatorEngine.cpp
 )
-target_link_libraries(unit_tests
+
+# Create a separate executable for each test file
+foreach(TEST_FILE ${TEST_FILES})
+    # Get the test name without extension
+    get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+    
+    # Create executable for this test
+    add_executable(${TEST_NAME} ${TEST_FILE})
+    
+    # Link against the main static library and GTest
+    target_link_libraries(${TEST_NAME}
         PUBLIC
-        easylogging
-        LoggingUtils
-        WebSocketSession
-        AlpacaMarketFeed
-        Utils
-        Indicators
+        macd-trading-bot
         GTest::gtest_main
-)
-
-pkg_check_modules(TALIB REQUIRED IMPORTED_TARGET ta-lib)
-target_link_libraries(unit_tests PUBLIC PkgConfig::TALIB)
-
-target_include_directories(unit_tests
+    )
+    
+    # Set include directories
+    target_include_directories(${TEST_NAME}
         PUBLIC
         ${CMAKE_SOURCE_DIR}/include
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    # Register the test with CTest
+    gtest_discover_tests(${TEST_NAME})
+endforeach()
 
+# Include GoogleTest for test discovery
 include(GoogleTest)
-gtest_discover_tests(unit_tests)
