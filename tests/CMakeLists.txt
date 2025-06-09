@@ -1,4 +1,4 @@
-# List of test files
+include(GoogleTest)
 set(TEST_FILES
     TestWebSocketSession.cpp
     TestAlpacaWSMarketFeed.cpp
@@ -6,38 +6,16 @@ set(TEST_FILES
     TestBar.cpp
     TestUtils.cpp
     TestIndicators.cpp
-    TestIndicatorEngine.cpp
-)
+    TestIndicatorEngine.cpp)
 
-# Create a separate executable for each test file
 foreach(TEST_FILE ${TEST_FILES})
-    # Get the test name without extension
-    get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
-    
-    # Create executable for this test
-    add_executable(${TEST_NAME} ${TEST_FILE})
-    
-    # Link against the main static library and GTest
-    target_link_libraries(${TEST_NAME}
-        PUBLIC
-        macd-trading-bot
-        GTest::gtest_main
-    )
-    
-    # Set include directories
-    target_include_directories(${TEST_NAME}
-        PUBLIC
-        ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-    
-    # Register the test with CTest
-    gtest_discover_tests(${TEST_NAME})
+  get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+  add_executable(${TEST_NAME} ${TEST_FILE})
+  target_link_libraries(${TEST_NAME} PUBLIC macd-trading-bot GTest::gtest_main)
+  target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include
+                                                 ${CMAKE_CURRENT_SOURCE_DIR})
+  gtest_discover_tests(${TEST_NAME})
 endforeach()
 
-# Add TA-Lib dependency only for TestIndicators (the only test that uses it)
 pkg_check_modules(TALIB REQUIRED IMPORTED_TARGET ta-lib)
 target_link_libraries(TestIndicators PUBLIC PkgConfig::TALIB)
-
-# Include GoogleTest for test discovery
-include(GoogleTest)

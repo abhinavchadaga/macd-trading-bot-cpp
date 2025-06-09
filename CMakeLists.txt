@@ -8,7 +8,6 @@ find_package(OpenSSL REQUIRED)
 find_package(Boost CONFIG REQUIRED COMPONENTS system)
 find_package(nlohmann_json REQUIRED)
 find_package(GTest CONFIG REQUIRED)
-find_package(PkgConfig REQUIRED)
 
 include_directories(include)
 include_directories(third-party)
