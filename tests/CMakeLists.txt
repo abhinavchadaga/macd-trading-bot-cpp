@@ -17,8 +17,7 @@ foreach(TEST_FILE ${TEST_FILES})
     target_link_options(${TEST_NAME} PRIVATE
                         -Wl,-force_load,$<TARGET_FILE:macd-trading-bot>)
   elseif(UNIX)
-    target_link_options(${TEST_NAME} PRIVATE -Wl,--whole-archive
-                        macd-trading-bot -Wl,--no-whole-archive)
+    target_link_options(${TEST_NAME} PRIVATE -Wl,--whole-archive,$<TARGET_FILE:macd-trading-bot>,--no-whole-archive)
   endif()
 
   target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include
