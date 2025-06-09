@@ -1,30 +1,29 @@
-add_executable(unit_tests
-        TestWebSocketSession.cpp
-        TestAlpacaWSMarketFeed.cpp
-        TestBarAggregatorIntegration.cpp
-        TestBar.cpp
-        TestUtils.cpp
-        TestIndicators.cpp
-        TestIndicatorEngine.cpp
-)
-target_link_libraries(unit_tests
-        PUBLIC
-        easylogging
-        LoggingUtils
-        WebSocketSession
-        AlpacaMarketFeed
-        Utils
-        Indicators
-        GTest::gtest_main
-)
+include(GoogleTest)
+set(TEST_FILES
+    TestWebSocketSession.cpp
+    TestAlpacaWSMarketFeed.cpp
+    TestBarAggregatorIntegration.cpp
+    TestBar.cpp
+    TestUtils.cpp
+    TestIndicators.cpp
+    TestIndicatorEngine.cpp)
+
+foreach(TEST_FILE ${TEST_FILES})
+  get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+  add_executable(${TEST_NAME} ${TEST_FILE})
+  target_link_libraries(${TEST_NAME} PUBLIC macd-trading-bot GTest::gtest_main)
+
+  if(APPLE)
+    target_link_options(${TEST_NAME} PRIVATE
+                        -Wl,-force_load,$<TARGET_FILE:macd-trading-bot>)
+  elseif(UNIX)
+    target_link_options(${TEST_NAME} PRIVATE -Wl,--whole-archive,$<TARGET_FILE:macd-trading-bot>,--no-whole-archive)
+  endif()
+
+  target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include
+                                                 ${CMAKE_CURRENT_SOURCE_DIR})
+  gtest_discover_tests(${TEST_NAME})
+endforeach()
 
 pkg_check_modules(TALIB REQUIRED IMPORTED_TARGET ta-lib)
-target_link_libraries(unit_tests PUBLIC PkgConfig::TALIB)
-
-target_include_directories(unit_tests
-        PUBLIC
-        ${CMAKE_SOURCE_DIR}/include
-)
-
-include(GoogleTest)
-gtest_discover_tests(unit_tests)
+target_link_libraries(TestIndicators PUBLIC PkgConfig::TALIB)

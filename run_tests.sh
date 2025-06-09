@@ -9,17 +9,17 @@ echo "Installing dependencies to $dep_install_dir"
 
 echo ""
 echo "--------------------------------"
-echo "Running unit_tests"
+echo "Building tests"
 echo "--------------------------------"
 echo ""
 
 ./test-utils/install.sh "$dep_install_dir"
-./build.sh "$build_type" unit_tests
+./build.sh "$build_type"
 
 echo ""
 echo "--------------------------------"
-echo "Running unit_tests..."
+echo "Running all tests..."
 echo "--------------------------------"
 echo ""
 
-./build/"$build_type"/tests/unit_tests
+cd "build/$build_type" && ctest --output-on-failure
