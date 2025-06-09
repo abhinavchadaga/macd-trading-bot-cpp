@@ -3,19 +3,22 @@
 void
 configure_logging()
 {
-  el::Configurations defaultConf;
-  defaultConf.setToDefault();
+  el::Configurations conf;
 
-  defaultConf.set(
+  conf.set(
     el::Level::Global,
     el::ConfigurationType::Format,
-    "%datetime %level %msg");
-  defaultConf.set(el::Level::Global, el::ConfigurationType::ToFile, "false");
-  defaultConf.set(
+    "%datetime %level [MACDTradingBot]%msg");
+  conf.set(el::Level::Global, el::ConfigurationType::ToFile, "false");
+  conf.set(el::Level::Global, el::ConfigurationType::ToStandardOutput, "true");
+  conf.set(el::Level::Global, el::ConfigurationType::SubsecondPrecision, "0");
+  conf.set(
     el::Level::Global,
-    el::ConfigurationType::ToStandardOutput,
-    "true");
+    el::ConfigurationType::PerformanceTracking,
+    "false");
+  conf.set(el::Level::Global, el::ConfigurationType::MaxLogFileSize, "0");
+  conf.set(el::Level::Global, el::ConfigurationType::LogFlushThreshold, "0");
 
-  el::Loggers::reconfigureAllLoggers(defaultConf);
+  el::Loggers::reconfigureLogger("MACDTradingBot", conf);
   el::Loggers::getLogger("MACDTradingBot");
 }
