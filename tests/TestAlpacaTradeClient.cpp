@@ -1,5 +1,5 @@
 #include "LoggingUtils.hpp"
-#include "alpaca_trade_client.hpp"
+#include "alpaca_trade_client/alpaca_trade_client.hpp"
 
 #include <boost/asio/ssl.hpp>
 #include <chrono>

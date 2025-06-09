@@ -1,4 +1,4 @@
-#include "alpaca_trade_client.hpp"
+#include "alpaca_trade_client/alpaca_trade_client.hpp"
 
 #include "LoggingUtils.hpp"
 
@@ -137,8 +137,9 @@ alpaca_trade_client::parse_response(
         }
       catch (const nlohmann::json::parse_error &e)
         {
-          LOG_ERROR(alpaca_trade_client, parse_response)
-            << "Failed to parse JSON response: " << e.what();
+          std::cerr << "ERROR [alpaca_trade_client::parse_response] Failed to "
+                       "parse JSON response: "
+                    << e.what() << std::endl;
           throw std::runtime_error(
             "Invalid JSON in API response: " + std::string(e.what()));
         }
@@ -191,7 +192,8 @@ alpaca_trade_client::parse_response(
         }
     }
 
-  LOG_ERROR(alpaca_trade_client, parse_response) << error_msg;
+  std::cerr << "ERROR [alpaca_trade_client::parse_response] " << error_msg
+            << std::endl;
   throw std::runtime_error(error_msg);
 }
 
@@ -206,4 +208,22 @@ alpaca_trade_client::setup_request_headers(
   req.set(http::field::user_agent, "macd-trading-bot/1.0");
   req.set("APCA-API-KEY-ID", _api_key);
   req.set("APCA-API-SECRET-KEY", _secret_key);
+}
+
+template <typename OrderType>
+http::request<http::string_body>
+alpaca_trade_client::create_order_request(const OrderType &order)
+{
+  http::request<http::string_body> req { http::verb::post, "/v2/orders", 11 };
+
+  boost::url  url { _endpoint };
+  std::string host { url.host() };
+  req.set(http::field::host, host);
+
+  req.body() = order.to_json().dump();
+  req.prepare_payload();
+
+  setup_request_headers(req);
+
+  return req;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "alpaca_trade_client/orders.hpp"
+
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/strand.hpp>
@@ -98,9 +100,6 @@ private:
     const OrderType &order);
 
   void setup_request_headers(http::request<http::string_body> &req);
-
-
-  void fail(beast::error_code ec, const char *what);
 
   //
   // Private ctor to prevent direct instantiation
