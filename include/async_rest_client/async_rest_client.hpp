@@ -1,11 +1,15 @@
 #pragma once
 
+#include "response.hpp"
+
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
+#include <functional>
 #include <memory>
+#include <queue>
 #include <string>
 
 namespace beast = boost::beast;
@@ -36,6 +40,11 @@ private:
     net::io_context &ioc,
     ssl::context    &ctxt);
 
+  //
+  // Connection methods
+
+  void connect();
+
 
 private:
 
@@ -44,10 +53,19 @@ private:
   std::string _name {};
 
   //
-  // Boost Beast state
-  tcp::resolver                     _resolver;
-  ssl::stream<beast::tcp_stream>    _stream;
-  beast::flat_buffer                _buffer;
-  http::request<http::empty_body>   _req;
-  http::response<http::string_body> _res;
+  // boost beast state
+
+  tcp::resolver                  _resolver;
+  ssl::stream<beast::tcp_stream> _stream;
+  beast::flat_buffer             _buffer;
+
+  //
+  // request state
+
+  std::queue<std::function<void()>> _requests {};
+
+  //
+  // response state
+
+  response_container _response {};
 };
