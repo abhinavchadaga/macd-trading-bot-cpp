@@ -1,0 +1,42 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Async Networking Patterns
+
+## Boost.Beast and Boost.Asio Usage
+- Use modern C++20 with Boost.Beast for HTTP/WebSocket operations
+- Follow the proactor pattern with `boost::asio::io_context`
+- Use `boost::asio::ssl::context` for secure connections
+- Prefer strand-based synchronization for thread safety
+
+## Class Design for Async Operations
+- Inherit from `std::enable_shared_from_this` for async lifetime management
+- Use private constructors with static `create()` factory methods
+- Store `boost::asio` components as member variables (resolver, stream, buffer)
+- Implement proper RAII for resource management
+
+## Async Operation Patterns
+- Use completion handlers with proper error handling
+- Queue requests when operations are in progress (see [alpaca_trade_client](mdc:include/alpaca_trade_client/alpaca_trade_client.hpp))
+- Handle connection state management explicitly
+- Implement timeout mechanisms for network operations
+
+## Error Handling
+- Always check `beast::error_code` in completion handlers
+- Use `boost::system::errc` for standard error conditions
+- Return meaningful error information to callers
+- Handle connection failures gracefully with retry logic where appropriate
+
+## Architecture Notes
+- [alpaca_trade_client](mdc:include/alpaca_trade_client/alpaca_trade_client.hpp) represents the mature async pattern to follow
+- [WebSocketSession](mdc:include/WebSocketSession.hpp) is an older implementation from early learning phase - do not use as reference
+- Focus on the alpaca_trade_client patterns for new async networking code
+- Use request queuing to serialize operations when needed
+
+## Performance Considerations
+- Reuse connections when possible
+- Use flat_buffer for efficient memory management
+- Minimize copying with move semantics
+- Keep async operations lightweight and non-blocking

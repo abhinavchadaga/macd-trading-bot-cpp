@@ -3,17 +3,33 @@ description:
 globs:
 alwaysApply: true
 ---
- 1. Use modern c++20 constructs when writing code
- 2. Follow the cpp core guidelines
- 3. Use braced initialization {} over copy initialization (=) or parentheses ()
- 4. Follow good OOP design principles
- 5. Make the code self-documenting through proper naming of variables - never include inline comments in implementations
- 6. Classes should be structured as follows:
-Static members
-Public functions
-Protected functions
-Private functions
-Public members
-Protected members
-Private members
-7. Use "_" as a prefix for instance variables
+# C++ Coding Standards
+
+## Language Standards
+- Use modern C++20 constructs when writing code
+- Follow the C++ Core Guidelines
+- Use braced initialization `{}` over copy initialization `=` or parentheses `()`
+- Follow good OOP design principles
+
+## Code Documentation
+- Make code self-documenting through proper naming of variables and functions
+- Never include inline comments in implementations
+- Use docstrings for class and function level documentation only
+- Variable and function names should clearly express their purpose
+
+## Class Structure
+Classes should be organized in the following order:
+1. Static members
+2. Public functions
+3. Protected functions
+4. Private functions
+5. Public members
+6. Protected members
+7. Private members
+
+## Naming Conventions
+- Use `_` as a prefix for instance variables
+- Follow snake_case for variables, functions, and class names
+- Use ALL_CAPS for constants and macros
+
+See [project-architecture.mdc](mdc:project-architecture.mdc) for additional architectural patterns.

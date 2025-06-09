@@ -3,5 +3,27 @@ description:
 globs:
 alwaysApply: true
 ---
- 1. Always use the scripts in this repo for configuring building. ./build.sh and ./configure.sh. If you need to extend them for testing something, suggest changes instead of using raw build commands.
- 2. When working on a feature and checking if the feature compiles, build the smallest target possible - avoid building all until we have validated that the feature compiles and works as expected.
+# Build System and Compilation
+
+## Build Scripts
+- Always use [build.sh](mdc:build.sh) and [configure.sh](mdc:configure.sh) for building
+- If you need to extend build scripts for testing, suggest changes rather than using raw build commands
+- Build scripts handle proper configuration for Debug/Release modes and dependency management
+
+## Incremental Building
+- When working on a feature, build the smallest target possible
+- Avoid building all targets until the specific feature compiles and works as expected
+- Use `./build.sh Debug <specific_target>` to build individual components
+
+## CMake Integration
+- Project uses CMake with C++20 standard ([CMakeLists.txt](mdc:CMakeLists.txt))
+- Dependencies managed through system package managers
+- Each major component has its own CMakeLists.txt for modular building
+
+## Compilation Workflow
+1. Configure build environment with `./configure.sh`
+2. Build specific targets with `./build.sh Debug <target>`
+3. Test compilation before proceeding to next feature
+4. Use incremental builds to validate changes quickly
+
+See [testing-patterns.mdc](mdc:testing-patterns.mdc) for test-specific build patterns.

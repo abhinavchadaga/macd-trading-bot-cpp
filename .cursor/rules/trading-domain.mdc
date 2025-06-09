@@ -1,0 +1,44 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Trading Bot Domain Patterns
+
+## Strategy Architecture
+- Follow the Proactor pattern for event-driven trading decisions
+- Separate data processing, indicator calculation, strategy logic, and trade execution
+- Components should be mockable for backtesting with historical data
+- Use single-threaded, event-loop driven architecture
+
+## Data Flow Pattern
+1. Receive market data (1-minute candles from WebSocket)
+2. Aggregate data into required timeframes (e.g., 5-minute candles)
+3. Calculate technical indicators on aggregated data
+4. Strategy evaluates indicators and outputs BUY/SELL/NO_ACTION
+5. TradeEngine executes appropriate market orders based on strategy decision
+
+## Component Responsibilities
+- **Bar Aggregation**: Convert raw market data into OHLCV bars ([BarAggregator](mdc:include/BarAggregator.hpp))
+- **Indicator Engine**: Calculate technical indicators ([IndicatorEngine](mdc:include/IndicatorEngine.hpp))
+- **Strategy Logic**: Evaluate indicators and generate trading signals
+- **Trade Engine**: Execute orders and manage positions
+- **Market Feed**: Stream real-time market data ([AlpacaWSMarketFeed](mdc:include/AlpacaWSMarketFeed.hpp))
+
+## Trading Logic Patterns
+- Always check current position before making trading decisions
+- Implement proper risk management (stop losses, position sizing)
+- Handle market close scenarios (flatten positions before market close)
+- Use market orders for entries and exits
+- Implement timeout and retry logic for order operations
+
+## State Management
+- Bot operates in two states: LONG position or CASH position
+- Track order fills through WebSocket to maintain accurate position state
+- Handle partial fills and order rejections appropriately
+- Maintain consistent state across async operations
+
+## Configuration and Setup
+- Use configuration structs for component setup (see [alpaca_trade_client::config](mdc:include/alpaca_trade_client/alpaca_trade_client.hpp))
+- Support both live and mock/historical data sources
+- Enable backtesting through dependency injection of mock components
