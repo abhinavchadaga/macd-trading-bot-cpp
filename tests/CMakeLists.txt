@@ -1,12 +1,13 @@
 include(GoogleTest)
 set(TEST_FILES
-    TestWebSocketSession.cpp
-    TestAlpacaWSMarketFeed.cpp
-    TestBarAggregatorIntegration.cpp
-    TestBar.cpp
-    TestUtils.cpp
-    TestIndicators.cpp
-    TestIndicatorEngine.cpp)
+  TestWebSocketSession.cpp
+  TestAlpacaWSMarketFeed.cpp
+  TestBarAggregatorIntegration.cpp
+  TestBar.cpp
+  TestUtils.cpp
+  TestIndicators.cpp
+  TestIndicatorEngine.cpp
+  TestAlpacaTradeClient.cpp)
 
 foreach(TEST_FILE ${TEST_FILES})
   get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
@@ -15,13 +16,13 @@ foreach(TEST_FILE ${TEST_FILES})
 
   if(APPLE)
     target_link_options(${TEST_NAME} PRIVATE
-                        -Wl,-force_load,$<TARGET_FILE:macd-trading-bot>)
+      -Wl,-force_load,$<TARGET_FILE:macd-trading-bot>)
   elseif(UNIX)
     target_link_options(${TEST_NAME} PRIVATE -Wl,--whole-archive,$<TARGET_FILE:macd-trading-bot>,--no-whole-archive)
   endif()
 
   target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include
-                                                 ${CMAKE_CURRENT_SOURCE_DIR})
+    ${CMAKE_CURRENT_SOURCE_DIR})
   gtest_discover_tests(${TEST_NAME})
 endforeach()
 

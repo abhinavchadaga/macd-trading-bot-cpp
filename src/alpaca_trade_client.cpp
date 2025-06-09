@@ -1,29 +1,115 @@
 #include "alpaca_trade_client.hpp"
 
-//
-// Paper trading endpoint for now
+#include "LoggingUtils.hpp"
 
-const char *alpaca_trade_client::ENDPOINT {
-  "https://paper-api.alpaca.markets"
-};
-
-//
-// Public Static Methods
+#include <boost/url.hpp>
 
 std::shared_ptr<alpaca_trade_client>
-alpaca_trade_client::create(net::io_context &ioc, ssl::context &ctxt)
+alpaca_trade_client::create(net::io_context &ioc, ssl::context &ctx)
 {
   return std::shared_ptr<alpaca_trade_client>(
-    new alpaca_trade_client(ioc, ctxt));
+    new alpaca_trade_client(ioc, ctx));
 }
-
-//
-// Private Methods
 
 alpaca_trade_client::alpaca_trade_client(
   net::io_context &ioc,
-  ssl::context    &ctxt)
-  : _resolver { ioc }
-  , _stream { ioc, ctxt }
+  ssl::context    &ctx)
+  : _resolver(ioc)
+  , _stream(ioc, ctx)
 {
+  CLASS_LOGGER(alpaca_trade_client);
+  configure_logging();
+}
+
+void
+alpaca_trade_client::connect(const config &cfg)
+{
+  try
+    {
+      _api_key    = cfg.api_key;
+      _secret_key = cfg.secret_key;
+      _endpoint   = cfg.endpoint;
+      _timeout    = cfg.timeout;
+
+      boost::url  url { cfg.endpoint };
+      std::string host { url.host() };
+      std::string port { url.port().empty() ? "443"
+                                            : std::string { url.port() } };
+
+      if (!SSL_set_tlsext_host_name(_stream.native_handle(), host.c_str()))
+        {
+          beast::error_code ec { static_cast<int>(::ERR_get_error()),
+                                 net::error::get_ssl_category() };
+          throw std::runtime_error(
+            "Failed to set SNI hostname: " + ec.message());
+        }
+
+      _stream.set_verify_mode(ssl::verify_peer);
+      _stream.set_verify_callback(ssl::host_name_verification(host));
+
+      LOG_DEBUG(alpaca_trade_client, connect)
+        << "Resolving Alpaca API host: " << host;
+      auto const results { _resolver.resolve(host, port) };
+
+      LOG_DEBUG(alpaca_trade_client, connect) << "Connecting to Alpaca API";
+      beast::get_lowest_layer(_stream).expires_after(_timeout);
+      auto ep { beast::get_lowest_layer(_stream).connect(results) };
+
+      LOG_DEBUG(alpaca_trade_client, connect) << "Performing SSL handshake";
+      _stream.handshake(ssl::stream_base::client);
+
+      _connected = true;
+      LOG_DEBUG(alpaca_trade_client, connect)
+        << "Successfully connected to Alpaca API at "
+        << ep.address().to_string() << ":" << ep.port();
+    }
+  catch (const std::exception &e)
+    {
+      _connected = false;
+      LOG_ERROR(alpaca_trade_client, connect)
+        << "Failed to connect to Alpaca API: " << e.what();
+      throw;
+    }
+}
+
+bool
+alpaca_trade_client::is_connected() const
+{
+  return _connected;
+}
+
+void
+alpaca_trade_client::disconnect()
+{
+  if (!_connected)
+    {
+      LOG_WARNING(alpaca_trade_client, disconnect)
+        << "calling disconnect() when not connected";
+      return;
+    }
+
+  try
+    {
+      LOG_DEBUG(alpaca_trade_client, disconnect)
+        << "Disconnecting from Alpaca API...";
+      beast::get_lowest_layer(_stream).expires_after(_timeout);
+
+      beast::error_code ec { _stream.shutdown(ec) };
+
+      if (ec && ec != net::ssl::error::stream_truncated)
+        {
+          LOG_ERROR(alpaca_trade_client, disconnect)
+            << "Error during disconnect: " << ec.message();
+        }
+
+      _connected = false;
+      LOG_DEBUG(alpaca_trade_client, disconnect)
+        << "Successfully disconnected from Alpaca API";
+    }
+  catch (const std::exception &e)
+    {
+      LOG_ERROR(alpaca_trade_client, disconnect)
+        << "Error during disconnect: " << e.what();
+      _connected = false;
+    }
 }
