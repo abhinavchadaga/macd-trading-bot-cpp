@@ -4,6 +4,9 @@
 
 #include <boost/url.hpp>
 
+//
+// Public static methods
+
 std::shared_ptr<alpaca_trade_client>
 alpaca_trade_client::create(net::io_context &ioc, ssl::context &ctx)
 {
@@ -20,6 +23,9 @@ alpaca_trade_client::alpaca_trade_client(
   CLASS_LOGGER(alpaca_trade_client);
   configure_logging();
 }
+
+//
+// Public methods
 
 void
 alpaca_trade_client::connect(const config &cfg)
@@ -112,4 +118,92 @@ alpaca_trade_client::disconnect()
         << "Error during disconnect: " << e.what();
       _connected = false;
     }
+}
+
+//
+// Private static methods
+
+nlohmann::json
+alpaca_trade_client::parse_response(
+  const http::response<http::string_body> &response)
+{
+  auto status { response.result_int() };
+
+  if (status == 201)
+    {
+      try
+        {
+          return nlohmann::json::parse(response.body());
+        }
+      catch (const nlohmann::json::parse_error &e)
+        {
+          LOG_ERROR(alpaca_trade_client, parse_response)
+            << "Failed to parse JSON response: " << e.what();
+          throw std::runtime_error(
+            "Invalid JSON in API response: " + std::string(e.what()));
+        }
+    }
+
+  std::string error_msg { "HTTP " + std::to_string(status) };
+
+  if (status == 400)
+    {
+      error_msg += " - Bad Request: Invalid order parameters";
+    }
+  else if (status == 401)
+    {
+      error_msg += " - Unauthorized: Invalid API credentials";
+    }
+  else if (status == 403)
+    {
+      error_msg += " - Forbidden: Access denied";
+    }
+  else if (status == 422)
+    {
+      error_msg += " - Unprocessable Entity: Order validation failed";
+    }
+  else if (status == 429)
+    {
+      error_msg += " - Rate limit exceeded";
+    }
+  else if (status >= 500)
+    {
+      error_msg += " - Server error";
+    }
+  else
+    {
+      error_msg += " - Unexpected response";
+    }
+
+  if (!response.body().empty())
+    {
+      try
+        {
+          auto error_json { nlohmann::json::parse(response.body()) };
+          if (error_json.contains("message"))
+            {
+              error_msg += ": " + error_json["message"].get<std::string>();
+            }
+        }
+      catch (const nlohmann::json::parse_error &)
+        {
+          error_msg += ": " + response.body();
+        }
+    }
+
+  LOG_ERROR(alpaca_trade_client, parse_response) << error_msg;
+  throw std::runtime_error(error_msg);
+}
+
+//
+// Private methods
+
+void
+alpaca_trade_client::setup_request_headers(
+  http::request<http::string_body> &req)
+{
+  req.set(http::field::content_type, "application/json");
+  req.set(http::field::user_agent, "macd-trading-bot/1.0");
+  req.set("APCA-API-KEY-ID", _api_key);
+  req.set("APCA-API-SECRET-KEY", _secret_key);
 }
