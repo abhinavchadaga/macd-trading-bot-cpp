@@ -14,6 +14,7 @@ include_directories(third-party)
 
 add_subdirectory(src)
 add_subdirectory(third-party)
+add_subdirectory(examples)
 
 enable_testing()
 add_subdirectory(tests)
