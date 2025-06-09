@@ -1,13 +1,12 @@
 #pragma once
 
-#include "alpaca_trade_client/orders.hpp"
-
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/ssl.hpp>
+#include <boost/system/error_code.hpp>
 #include <chrono>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -128,3 +127,40 @@ private:
   std::queue<pending_request> _request_queue;
   bool                        _request_in_progress { false };
 };
+
+//
+// Template implementations
+
+template <typename OrderType, typename CompletionHandler>
+void
+alpaca_trade_client::submit_order(
+  const OrderType    &order,
+  CompletionHandler &&handler)
+{
+  if (!_connected)
+    {
+      auto ec { boost::system::errc::make_error_code(
+        boost::system::errc::not_connected) };
+      handler(ec, nlohmann::json {});
+      return;
+    }
+
+  try
+    {
+      auto request { create_order_request(order) };
+
+      pending_request pending {};
+      pending._request = std::move(request);
+      pending._handler = std::forward<CompletionHandler>(handler);
+
+      _request_queue.push(std::move(pending));
+
+      process_request_queue();
+    }
+  catch (const std::exception &e)
+    {
+      auto ec { boost::system::errc::make_error_code(
+        boost::system::errc::invalid_argument) };
+      handler(ec, nlohmann::json {});
+    }
+}
