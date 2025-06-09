@@ -1,12 +1,19 @@
 ---
 description:
-globs: *.cpp,*.hpp
-alwaysApply: false
+globs:
+alwaysApply: true
 ---
- Use modern c++20 constructs when writing code
- Follow the cpp core guidelines
- Use braced initialization over copy initialization or parentheses
- Follow good OOP design principles
- Make the code self-documenting through proper naming of variables - do not include inline comments in implementations ever
- Always use the scripts in this repo for configuring building. ./build.sh and ./configure.sh. If you need to extend them for testing something, suggest changes instead of using raw build commands.
- When working on a feature and checking if the feature compiles, build the smallest target possible - avoid building all until we have validated that the feature compiles and works as expected.
+ 1. Use modern c++20 constructs when writing code
+ 2. Follow the cpp core guidelines
+ 3. Use braced initialization {} over copy initialization (=) or parentheses ()
+ 4. Follow good OOP design principles
+ 5. Make the code self-documenting through proper naming of variables - never include inline comments in implementations
+ 6. Classes should be structured as follows:
+Static members
+Public functions
+Protected functions
+Private functions
+Public members
+Protected members
+Private members
+7. Use "_" as a prefix for instance variables

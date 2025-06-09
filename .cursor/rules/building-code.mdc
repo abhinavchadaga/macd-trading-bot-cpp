@@ -1,0 +1,7 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+ 1. Always use the scripts in this repo for configuring building. ./build.sh and ./configure.sh. If you need to extend them for testing something, suggest changes instead of using raw build commands.
+ 2. When working on a feature and checking if the feature compiles, build the smallest target possible - avoid building all until we have validated that the feature compiles and works as expected.
