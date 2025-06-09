@@ -23,7 +23,3 @@ target_include_directories(macd-trading-bot
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/third-party
 )
-
-# Link TA-Lib for indicators
-pkg_check_modules(TALIB REQUIRED IMPORTED_TARGET ta-lib)
-target_link_libraries(macd-trading-bot PUBLIC PkgConfig::TALIB)

@@ -35,5 +35,9 @@ foreach(TEST_FILE ${TEST_FILES})
     gtest_discover_tests(${TEST_NAME})
 endforeach()
 
+# Add TA-Lib dependency only for TestIndicators (the only test that uses it)
+pkg_check_modules(TALIB REQUIRED IMPORTED_TARGET ta-lib)
+target_link_libraries(TestIndicators PUBLIC PkgConfig::TALIB)
+
 # Include GoogleTest for test discovery
 include(GoogleTest)
