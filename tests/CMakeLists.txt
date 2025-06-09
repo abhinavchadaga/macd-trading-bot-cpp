@@ -12,6 +12,15 @@ foreach(TEST_FILE ${TEST_FILES})
   get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
   add_executable(${TEST_NAME} ${TEST_FILE})
   target_link_libraries(${TEST_NAME} PUBLIC macd-trading-bot GTest::gtest_main)
+
+  if(APPLE)
+    target_link_options(${TEST_NAME} PRIVATE
+                        -Wl,-force_load,$<TARGET_FILE:macd-trading-bot>)
+  elseif(UNIX)
+    target_link_options(${TEST_NAME} PRIVATE -Wl,--whole-archive
+                        macd-trading-bot -Wl,--no-whole-archive)
+  endif()
+
   target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include
                                                  ${CMAKE_CURRENT_SOURCE_DIR})
   gtest_discover_tests(${TEST_NAME})
