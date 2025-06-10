@@ -16,7 +16,7 @@
     "vscode": {
       "extensions": [
         // CPP
-        "llvm-vs-code-extensions.vscode-clangd",
+        "anysphere.cpptools",
         "tdennis4496.cmantic",
         "matepek.vscode-catch2-test-adapter",
         // CMAKE
