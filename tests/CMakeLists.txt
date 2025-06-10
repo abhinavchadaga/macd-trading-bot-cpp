@@ -7,7 +7,11 @@ set(TEST_FILES
   TestUtils.cpp
   TestIndicators.cpp
   TestIndicatorEngine.cpp
-  TestAlpacaTradeClient.cpp)
+  TestAlpacaTradeClient.cpp
+  TestAsyncRestClientConnection.cpp
+  TestAsyncRestClientTaskSystem.cpp
+  TestAsyncRestClientRequestResponse.cpp
+  TestAsyncRestClientGet.cpp)
 
 foreach(TEST_FILE ${TEST_FILES})
   get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
@@ -26,5 +30,5 @@ foreach(TEST_FILE ${TEST_FILES})
   gtest_discover_tests(${TEST_NAME})
 endforeach()
 
-pkg_check_modules(TALIB REQUIRED IMPORTED_TARGET ta-lib)
-target_link_libraries(TestIndicators PUBLIC PkgConfig::TALIB)
+# pkg_check_modules(TALIB REQUIRED IMPORTED_TARGET ta-lib)
+# target_link_libraries(TestIndicators PUBLIC PkgConfig::TALIB)
