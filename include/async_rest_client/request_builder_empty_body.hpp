@@ -1,43 +1,39 @@
 #pragma once
 
 #include "request_builder_fwd.hpp"
+
 #include <boost/beast.hpp>
 #include <boost/url.hpp>
-#include <functional>
 
-namespace async_rest_client {
+namespace async_rest_client
+{
 
 namespace http = boost::beast::http;
 
-template<>
-struct request_builder<http::empty_body> {
-    using request_type = http::request<http::empty_body>;
-    using writer_type = std::function<void(request_type&)>;
-
-    static writer_type build(
-        const std::string& url,
-        const http::fields& header_params,
-        const std::string& user_agent
-    ) {
-        return [url, header_params, user_agent](request_type& req) {
-            boost::urls::url_view parsed_url(url);
-            
-            req.method(http::verb::get);
-            req.target(parsed_url.path().empty() ? "/" : parsed_url.path());
-            req.version(11);
-            req.set(http::field::host, parsed_url.host());
-            req.set(http::field::user_agent, user_agent);
-            req.set(http::field::connection, "close");
-            
-            for (const auto& field : header_params) {
-                if (field.name() == http::field::unknown) {
-                    req.insert(field.name_string(), field.value());
-                } else {
-                    req.set(field.name(), field.value());
-                }
-            }
-        };
-    }
+template <>
+struct request_builder<http::empty_body>
+  : public detail::
+      request_builder_base<request_builder<http::empty_body>, http::empty_body>
+{
+  static writer_type build(
+    const boost::url   &url,
+    const http::fields &header_params,
+    const std::string  &user_agent);
 };
 
+//
+// Template Implementation
+
+inline request_builder<http::empty_body>::writer_type
+request_builder<http::empty_body>::build(
+  const boost::url   &url,
+  const http::fields &header_params,
+  const std::string  &user_agent)
+{
+  return [&url, header_params, user_agent](request_type &req) {
+    req.method(http::verb::get);
+    setup_default_headers(req, url, header_params, user_agent);
+  };
 }
+
+} // namespace async_rest_client

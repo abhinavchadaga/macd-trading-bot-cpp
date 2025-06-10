@@ -6,6 +6,7 @@
 #include <boost/beast.hpp>
 #include <functional>
 #include <memory>
+#include <string>
 
 namespace async_rest_client::detail
 {
@@ -33,14 +34,23 @@ public:
 
   static std::shared_ptr<typed_task>
   create(
+    const std::string      &url,
     request_writer          writer,
     response_reader         reader,
     user_completion_handler handler)
   {
     return std::shared_ptr<typed_task>(new typed_task(
+      url,
       std::move(writer),
       std::move(reader),
       std::move(handler)));
+  }
+
+  [[nodiscard]]
+  const boost::url &
+  url() const override
+  {
+    return _url;
   }
 
   void
@@ -87,15 +97,18 @@ public:
 private:
 
   typed_task(
+    const std::string      &url,
     request_writer          writer,
     response_reader         reader,
     user_completion_handler handler)
-    : _request_writer { std::move(writer) }
+    : _url { url }
+    , _request_writer { std::move(writer) }
     , _response_reader { std::move(reader) }
     , _user_handler { std::move(handler) }
   {
   }
 
+  boost::url              _url;
   request_type            _request;
   response_type           _response;
   request_writer          _request_writer;
