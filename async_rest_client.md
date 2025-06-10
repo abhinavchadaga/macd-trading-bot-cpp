@@ -168,16 +168,60 @@ Caller Thread                        async_rest_client Internals
 | 4 | **Public API: `get`** | • Implement `get<ResponseBody>()` wrapper.<br>• Internally create `typed_task<http::empty_body, ResponseBody>` and enqueue.<br>• Support `http::string_body` response; add compile-time guard for others until implemented. | Functional test hitting `https://httpbin.org/get`. |
 | 5 | **Public API: `post`** | • Implement `post<RequestBody, ResponseBody>()` wrapper.<br>• Provide first implementation for `<http::string_body, http::string_body>`.<br>• Ensure body size, content-type header, and payload preparation. | Functional test posting JSON to `https://httpbin.org/post`. |
 | 6 | **Timeout & Error Propagation** | • Integrate per-operation timer (`asio::steady_timer`).<br>• Map common Beast/Asio errors to `boost::system::errc` enums.<br>• Surface all failures through user completion handler. | Unit test using intentionally unreachable host. |
-| 7 | **Thread-Safety & Strand Verification** | • Ensure all I/O operations and queue manipulations occur on the strand.<br>• Multi-threaded stress test that enqueues 1 000 mixed requests. | `TestAsyncRestClientConcurrency` passes under `TSAN`. |
-| 8 | **Integration With Alpaca Clients** | • Replace direct Beast usage in `alpaca_order_client` / `alpaca_positions_client` prototypes with new rest client.<br>• Compile and run existing order/position tests. | Existing Alpaca tests green. |
-| 9 | **Additional Verbs & Body Types (Optional)** | • Add `put`, `delete`, etc.<br>• Implement `request_builder<http::file_body>` and `response_parser<http::dynamic_body>` as reference extensions. | New dedicated tests. |
+| 7 | **Comprehensive Testing** | • Create `tests/TestAsyncRestClient.cpp` following project conventions.<br>• Test `GET` requests against `https://httpbin.org/get`, `/json`, `/headers`.<br>• Test `POST` requests with JSON payloads to `https://httpbin.org/post`.<br>• Verify request headers, response parsing, and error handling.<br>• Test timeout scenarios and connection failures. | Build and run `TestAsyncRestClient` suite. |
 
 **Incremental Build Strategy**
 
 * Use `./build.sh Debug async_rest_client` for fast iteration per phase.
 * Unit tests follow the pattern `TestAsyncRestClient*.cpp` and are built individually.
 
-### 13. File-Organisation Guidelines
+### 13. Testing Strategy
+
+**Test Target: httpbin.org**
+
+httpbin.org provides a reliable HTTP testing service with well-defined endpoints that return predictable JSON responses. This makes it ideal for validating our REST client implementation without requiring complex test infrastructure.
+
+**Test Categories**
+
+| Test Type | Endpoints | Validation Focus |
+|-----------|-----------|-----------------|
+| **Basic GET Requests** | `/get`, `/json` | Response parsing, header handling, connection management |
+| **POST Requests** | `/post` | Request body serialization, content-type headers, response echo validation |
+| **Header Verification** | `/headers` | Custom header transmission and server echo validation |
+| **Error Handling** | Invalid hosts, timeout scenarios | Error propagation, connection failure handling |
+| **Response Formats** | `/json`, `/xml` (future) | Body type specialization and parsing validation |
+
+**Test File Organization**
+
+Following project conventions, all tests will be placed in `tests/TestAsyncRestClient.cpp` with the following structure:
+
+```cpp
+class AsyncRestClientTest : public ::testing::Test {
+protected:
+  void SetUp() override;
+  void TearDown() override;
+  
+  std::unique_ptr<boost::asio::io_context> _ioc;
+  std::unique_ptr<boost::asio::ssl::context> _ssl_ctx;
+};
+```
+
+**Key Test Cases**
+
+1. **Connection Management**: Verify connect/disconnect lifecycle
+2. **GET Request Validation**: Test against `/get` endpoint, verify query parameters and headers
+3. **POST Request Validation**: Submit JSON to `/post`, verify request body echoed correctly
+4. **Response Parsing**: Ensure JSON responses are properly parsed and accessible
+5. **Error Scenarios**: Test invalid URLs, connection timeouts, and network failures
+6. **Concurrent Requests**: Verify request queuing and FIFO processing
+
+**Build Integration**
+
+* Test executable: `TestAsyncRestClient` (following existing pattern)
+* Build command: `./build.sh Debug TestAsyncRestClient`
+* Uses `gtest_filter` for targeted test execution during development
+
+### 14. File-Organisation Guidelines
 
 To prevent `async_rest_client.hpp` / `.cpp` from growing unwieldy, each substantive helper or internal component should reside in its own pair of files.
 
