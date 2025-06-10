@@ -1,5 +1,5 @@
 ---
-description:
+description: If you are dealing with trading/strategy specific code, read these rules
 globs:
 alwaysApply: false
 ---
