@@ -34,15 +34,13 @@ alpaca_trade_client::connect(const config &cfg)
     {
       _api_key    = cfg.api_key;
       _secret_key = cfg.secret_key;
-      _endpoint   = cfg.endpoint;
       _timeout    = cfg.timeout;
 
-      boost::url  url { cfg.endpoint };
-      std::string host { url.host() };
-      std::string port { url.port().empty() ? "443"
-                                            : std::string { url.port() } };
+      boost::url url { cfg.endpoint };
+      _host = std::string { url.host() };
+      _port = url.port().empty() ? "443" : std::string { url.port() };
 
-      if (!SSL_set_tlsext_host_name(_stream.native_handle(), host.c_str()))
+      if (!SSL_set_tlsext_host_name(_stream.native_handle(), _host.c_str()))
         {
           beast::error_code ec { static_cast<int>(::ERR_get_error()),
                                  net::error::get_ssl_category() };
@@ -51,11 +49,11 @@ alpaca_trade_client::connect(const config &cfg)
         }
 
       _stream.set_verify_mode(ssl::verify_peer);
-      _stream.set_verify_callback(ssl::host_name_verification(host));
+      _stream.set_verify_callback(ssl::host_name_verification(_host));
 
       LOG_DEBUG(alpaca_trade_client, connect)
-        << "Resolving Alpaca API host: " << host;
-      auto const results { _resolver.resolve(host, port) };
+        << "Resolving Alpaca API host: " << _host;
+      auto const results { _resolver.resolve(_host, _port) };
 
       LOG_DEBUG(alpaca_trade_client, connect) << "Connecting to Alpaca API";
       beast::get_lowest_layer(_stream).expires_after(_timeout);
@@ -127,9 +125,7 @@ nlohmann::json
 alpaca_trade_client::parse_response(
   const http::response<http::string_body> &response)
 {
-  auto status { response.result_int() };
-
-  if (status == 201)
+  if (response.result() == http::status::ok)
     {
       try
         {
@@ -137,43 +133,28 @@ alpaca_trade_client::parse_response(
         }
       catch (const nlohmann::json::parse_error &e)
         {
-          std::cerr << "ERROR [alpaca_trade_client::parse_response] Failed to "
-                       "parse JSON response: "
-                    << e.what() << std::endl;
+          LOG_ERROR(alpaca_trade_client, parse_response)
+            << "Failed to parse JSON response: " << e.what();
           throw std::runtime_error(
             "Invalid JSON in API response: " + std::string(e.what()));
         }
     }
 
-  std::string error_msg { "HTTP " + std::to_string(status) };
+  std::string error_msg { std::format("HTTP {}", response.result_int()) };
 
-  if (status == 400)
+  if (response.result() == http::status::forbidden)
     {
-      error_msg += " - Bad Request: Invalid order parameters";
+      error_msg += " - Forbidden: Insufficient buying power";
     }
-  else if (status == 401)
+  else if (response.result() == http::status::unprocessable_entity)
     {
-      error_msg += " - Unauthorized: Invalid API credentials";
-    }
-  else if (status == 403)
-    {
-      error_msg += " - Forbidden: Access denied";
-    }
-  else if (status == 422)
-    {
-      error_msg += " - Unprocessable Entity: Order validation failed";
-    }
-  else if (status == 429)
-    {
-      error_msg += " - Rate limit exceeded";
-    }
-  else if (status >= 500)
-    {
-      error_msg += " - Server error";
+      error_msg += " - Unprocessable Entity: Input parameters not recognized";
     }
   else
     {
-      error_msg += " - Unexpected response";
+      LOG_WARNING(alpaca_trade_client, parse_response)
+        << "Unrecognized error code from Alpaca API: " << response.result();
+      error_msg += " - Unrecognized error code";
     }
 
   if (!response.body().empty())
@@ -192,8 +173,7 @@ alpaca_trade_client::parse_response(
         }
     }
 
-  std::cerr << "ERROR [alpaca_trade_client::parse_response] " << error_msg
-            << std::endl;
+  LOG_ERROR(alpaca_trade_client, parse_response) << error_msg;
   throw std::runtime_error(error_msg);
 }
 
@@ -243,24 +223,6 @@ alpaca_trade_client::send_next_request()
       std::size_t bytes_transferred) {
       self->on_write(ec, bytes_transferred);
     });
-}
-
-template <typename OrderType>
-http::request<http::string_body>
-alpaca_trade_client::create_order_request(const OrderType &order)
-{
-  http::request<http::string_body> req { http::verb::post, "/v2/orders", 11 };
-
-  boost::url  url { _endpoint };
-  std::string host { url.host() };
-  req.set(http::field::host, host);
-
-  req.body() = order.to_json().dump();
-  req.prepare_payload();
-
-  setup_request_headers(req);
-
-  return req;
 }
 
 void

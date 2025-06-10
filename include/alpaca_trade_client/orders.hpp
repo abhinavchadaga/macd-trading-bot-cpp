@@ -33,6 +33,7 @@ public:
   std::string time_in_force { TimeInForce::DAY };
   bool        extended_hours { false };
 
+  [[nodiscard]]
   nlohmann::json to_json() const;
 };
 
@@ -47,5 +48,6 @@ public:
   std::string time_in_force { TimeInForce::DAY };
   bool        extended_hours { false };
 
+  [[nodiscard]]
   nlohmann::json to_json() const;
 };

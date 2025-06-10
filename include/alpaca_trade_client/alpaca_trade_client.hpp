@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LoggingUtils.hpp"
+
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/strand.hpp>
@@ -7,6 +9,7 @@
 #include <boost/beast/http.hpp>
 #include <boost/beast/ssl.hpp>
 #include <boost/system/error_code.hpp>
+#include <boost/url.hpp>
 #include <chrono>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -115,7 +118,8 @@ private:
   // Configuration
   std::string          _api_key {};
   std::string          _secret_key {};
-  std::string          _endpoint {};
+  std::string          _host {};
+  std::string          _port {};
   std::chrono::seconds _timeout { 30 };
 
   //
@@ -164,4 +168,24 @@ alpaca_trade_client::submit_order(
         boost::system::errc::invalid_argument) };
       handler(ec, nlohmann::json {});
     }
+}
+
+template <typename OrderType>
+inline http::request<http::string_body>
+alpaca_trade_client::create_order_request(const OrderType &order)
+{
+  http::request<http::string_body> req { http::verb::post, "/v2/orders", 11 };
+
+  req.set(http::field::host, _host);
+
+  req.body() = order.to_json().dump();
+
+  LOG_DEBUG(alpaca_trade_client, create_order_request)
+    << "Request body: " << req.body();
+
+  req.prepare_payload();
+
+  setup_request_headers(req);
+
+  return req;
 }
