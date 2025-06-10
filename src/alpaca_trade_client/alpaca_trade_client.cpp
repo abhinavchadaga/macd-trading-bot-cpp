@@ -210,6 +210,41 @@ alpaca_trade_client::setup_request_headers(
   req.set("APCA-API-SECRET-KEY", _secret_key);
 }
 
+void
+alpaca_trade_client::process_request_queue()
+{
+  if (_request_in_progress || _request_queue.empty())
+    {
+      return;
+    }
+
+  LOG_DEBUG(alpaca_trade_client, process_request_queue)
+    << "Processing request queue, " << _request_queue.size()
+    << " requests pending";
+
+  send_next_request();
+}
+
+void
+alpaca_trade_client::send_next_request()
+{
+  _request_in_progress = true;
+
+  auto &pending_req { _request_queue.front() };
+
+  LOG_DEBUG(alpaca_trade_client, send_next_request)
+    << "Sending request to " << pending_req._request.target();
+
+  http::async_write(
+    _stream,
+    pending_req._request,
+    [self = shared_from_this()](
+      beast::error_code ec,
+      std::size_t bytes_transferred) {
+      self->on_write(ec, bytes_transferred);
+    });
+}
+
 template <typename OrderType>
 http::request<http::string_body>
 alpaca_trade_client::create_order_request(const OrderType &order)
@@ -226,4 +261,84 @@ alpaca_trade_client::create_order_request(const OrderType &order)
   setup_request_headers(req);
 
   return req;
+}
+
+void
+alpaca_trade_client::on_write(
+  beast::error_code ec,
+  std::size_t       bytes_transferred)
+{
+  boost::ignore_unused(bytes_transferred);
+
+  if (ec)
+    {
+      LOG_ERROR(alpaca_trade_client, on_write)
+        << "Failed to write request: " << ec.message();
+
+      auto &pending_req { _request_queue.front() };
+      pending_req._handler(ec, nlohmann::json {});
+      _request_queue.pop();
+      _request_in_progress = false;
+
+      process_request_queue();
+      return;
+    }
+
+  LOG_DEBUG(alpaca_trade_client, on_write)
+    << "Successfully wrote " << bytes_transferred << " bytes";
+
+  http::async_read(
+    _stream,
+    _buffer,
+    _response,
+    [self = shared_from_this()](
+      beast::error_code ec,
+      std::size_t bytes_transferred) {
+      self->on_read(ec, bytes_transferred);
+    });
+}
+
+void
+alpaca_trade_client::on_read(
+  beast::error_code ec,
+  std::size_t       bytes_transferred)
+{
+  boost::ignore_unused(bytes_transferred);
+
+  auto &pending_req { _request_queue.front() };
+
+  if (ec)
+    {
+      LOG_ERROR(alpaca_trade_client, on_read)
+        << "Failed to read response: " << ec.message();
+
+      pending_req._handler(ec, nlohmann::json {});
+    }
+  else
+    {
+      LOG_DEBUG(alpaca_trade_client, on_read)
+        << "Successfully read " << bytes_transferred << " bytes";
+
+      try
+        {
+          auto json_response { parse_response(_response) };
+          pending_req._handler(ec, json_response);
+        }
+      catch (const std::exception &e)
+        {
+          LOG_ERROR(alpaca_trade_client, on_read)
+            << "Failed to parse response: " << e.what();
+
+          auto parse_error { boost::system::errc::make_error_code(
+            boost::system::errc::invalid_argument) };
+          pending_req._handler(parse_error, nlohmann::json {});
+        }
+    }
+
+  _request_queue.pop();
+  _request_in_progress = false;
+  _response.clear();
+  _buffer.clear();
+
+  process_request_queue();
 }

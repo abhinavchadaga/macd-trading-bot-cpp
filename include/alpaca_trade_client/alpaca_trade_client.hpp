@@ -109,7 +109,7 @@ private:
   // Boost.Asio components
   tcp::resolver                  _resolver;
   ssl::stream<beast::tcp_stream> _stream;
-  beast::flat_buffer             _buffer;
+  beast::flat_buffer             _buffer {};
 
   //
   // Configuration
@@ -124,8 +124,9 @@ private:
 
   //
   // Request state
-  std::queue<pending_request> _request_queue;
-  bool                        _request_in_progress { false };
+  std::queue<pending_request>       _request_queue {};
+  bool                              _request_in_progress { false };
+  http::response<http::string_body> _response {};
 };
 
 //
