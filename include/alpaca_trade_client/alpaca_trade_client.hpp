@@ -1,7 +1,5 @@
 #pragma once
 
-#include "LoggingUtils.hpp"
-
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/strand.hpp>
@@ -15,6 +13,7 @@
 #include <nlohmann/json.hpp>
 #include <queue>
 #include <string>
+#include <utility>
 
 namespace net   = boost::asio;
 namespace ssl   = boost::asio::ssl;
@@ -27,9 +26,16 @@ class alpaca_trade_client
 {
 public:
 
-  /**
-   * @brief Configuration for the alpaca_trade_client
-   */
+  //
+  // Static methods
+
+  static std::shared_ptr<alpaca_trade_client> create(
+    net::io_context &ioc,
+    ssl::context    &ctx);
+
+  //
+  // Configuration
+
   struct config
   {
     std::string          api_key;
@@ -39,67 +45,124 @@ public:
     std::size_t          max_retries { 3 };
   };
 
-  /**
-   * @brief Create a new alpaca_trade_client instance
-   *
-   * @param ioc I/O context
-   * @param ctx SSL context
-   * @return std::shared_ptr<alpaca_trade_client>
-   */
-  static std::shared_ptr<alpaca_trade_client> create(
-    net::io_context &ioc,
-    ssl::context    &ctx);
+  //
+  // Overload tags
 
-  /**
-   * @brief Connect to the Alpaca API using the provided configuration
-   * Occurs asynchronously.
-   *
-   * @param cfg Configuration
-   */
+  struct qty_t
+  {
+    std::string value;
+
+    explicit qty_t(std::string v)
+      : value(std::move(v))
+    {
+    }
+  };
+
+  struct percentage_t
+  {
+    std::string value;
+
+    explicit percentage_t(std::string v)
+      : value(std::move(v))
+    {
+    }
+  };
+
+  //
+  // Public methods
+
   void connect(const config &cfg);
 
-  /**
-   * @brief Submit an order to the Alpaca API
-   * Occurs asynchronously.
-   *
-   * @param order Order
-   * @param handler Completion handler
-   */
+  //
+  // /v2/orders
+
   template <typename OrderType, typename CompletionHandler>
   void submit_order(const OrderType &order, CompletionHandler &&handler);
 
-  /**
-   * @brief Check if the client is connected to the Alpaca API
-   *
-   * @return true if connected, false otherwise
-   */
+  //
+  // /v2/positions
+
+  template <typename CompletionHandler>
+  void get_all_positions(CompletionHandler &&handler);
+
+  template <typename CompletionHandler>
+  void get_position(
+    const std::string  &symbol_or_asset_id,
+    CompletionHandler &&handler);
+
+  template <typename CompletionHandler>
+  void close_all_positions(bool cancel_orders, CompletionHandler &&handler);
+
+  template <typename CompletionHandler>
+  void close_position(
+    const std::string  &symbol_or_asset_id,
+    CompletionHandler &&handler);
+
+  template <typename CompletionHandler>
+  void close_position(
+    const std::string  &symbol_or_asset_id,
+    const qty_t        &qty,
+    CompletionHandler &&handler);
+
+  template <typename CompletionHandler>
+  void close_position(
+    const std::string  &symbol_or_asset_id,
+    const percentage_t &percentage,
+    CompletionHandler &&handler);
+
   bool is_connected() const;
 
-  /**
-   * @brief Disconnect from the Alpaca API
-   * Occurs synchronously.
-   */
   void disconnect();
 
 private:
 
-  struct pending_request
+  using completion_handler_t
+    = std::function<void(beast::error_code, const nlohmann::json &)>;
+  using response_parser_t
+    = std::function<nlohmann::json(const http::response<http::string_body> &)>;
+
+  struct task
   {
-    http::request<http::string_body>                               _request;
-    std::function<void(beast::error_code, const nlohmann::json &)> _handler;
+    http::request<http::string_body> _request;
+    completion_handler_t             _handler;
+    response_parser_t                _response_parser;
   };
+
+  struct request_info
+  {
+    http::verb  verb;
+    boost::url  url;
+    std::string body {};
+  };
+
+  //
+  // Response parsers
 
   static nlohmann::json parse_response(
     const http::response<http::string_body> &response);
+
+  static nlohmann::json parse_order_response(
+    const http::response<http::string_body> &response);
+
+  static nlohmann::json parse_positions_response(
+    const http::response<http::string_body> &response);
+
+  //
+  // Send helpers
+
+  template <typename CompletionHandler>
+  void execute_async_request(
+    const request_info &req_info,
+    CompletionHandler &&handler,
+    response_parser_t   response_parser = parse_response);
 
   void process_request_queue();
   void send_next_request();
   void on_write(beast::error_code ec, std::size_t bytes_transferred);
   void on_read(beast::error_code ec, std::size_t bytes_transferred);
 
-  template <typename OrderType>
-  http::request<http::string_body> create_order_request(
-    const OrderType &order);
+  http::request<http::string_body> create_request(
+    const request_info &req_info);
 
   void setup_request_headers(http::request<http::string_body> &req);
 
@@ -110,12 +173,14 @@ private:
 
   //
   // Boost.Asio components
+
   tcp::resolver                  _resolver;
   ssl::stream<beast::tcp_stream> _stream;
   beast::flat_buffer             _buffer {};
 
   //
   // Configuration
+
   std::string          _api_key {};
   std::string          _secret_key {};
   std::string          _host {};
@@ -124,11 +189,12 @@ private:
 
   //
   // Connection state
+
   bool _connected { false };
 
   //
   // Request state
-  std::queue<pending_request>       _request_queue {};
+  std::queue<task>                  _request_queue {};
   bool                              _request_in_progress { false };
   http::response<http::string_body> _response {};
 };
@@ -136,11 +202,12 @@ private:
 //
 // Template implementations
 
-template <typename OrderType, typename CompletionHandler>
+template <typename CompletionHandler>
 void
-alpaca_trade_client::submit_order(
-  const OrderType    &order,
-  CompletionHandler &&handler)
+alpaca_trade_client::execute_async_request(
+  const request_info &req_info,
+  CompletionHandler &&handler,
+  response_parser_t   response_parser)
 {
   if (!_connected)
     {
@@ -152,13 +219,14 @@ alpaca_trade_client::submit_order(
 
   try
     {
-      auto request { create_order_request(order) };
+      auto request { create_request(req_info) };
 
-      pending_request pending {};
-      pending._request = std::move(request);
-      pending._handler = std::forward<CompletionHandler>(handler);
+      task async_task {};
+      async_task._request         = std::move(request);
+      async_task._handler         = std::forward<CompletionHandler>(handler);
+      async_task._response_parser = std::move(response_parser);
 
-      _request_queue.push(std::move(pending));
+      _request_queue.push(std::move(async_task));
 
       process_request_queue();
     }
@@ -170,22 +238,123 @@ alpaca_trade_client::submit_order(
     }
 }
 
-template <typename OrderType>
-inline http::request<http::string_body>
-alpaca_trade_client::create_order_request(const OrderType &order)
+template <typename OrderType, typename CompletionHandler>
+void
+alpaca_trade_client::submit_order(
+  const OrderType    &order,
+  CompletionHandler &&handler)
 {
-  http::request<http::string_body> req { http::verb::post, "/v2/orders", 11 };
+  auto req_info {
+    request_info { http::verb::post,
+                  boost::url { "/v2/orders" },
+                  order.to_json().dump() }
+  };
+  execute_async_request(
+    req_info,
+    std::forward<CompletionHandler>(handler),
+    parse_order_response);
+}
 
-  req.set(http::field::host, _host);
+template <typename CompletionHandler>
+void
+alpaca_trade_client::get_all_positions(CompletionHandler &&handler)
+{
+  auto req_info {
+    request_info { http::verb::get, boost::url { "/v2/positions" } }
+  };
+  execute_async_request(
+    req_info,
+    std::forward<CompletionHandler>(handler),
+    parse_positions_response);
+}
 
-  req.body() = order.to_json().dump();
+template <typename CompletionHandler>
+void
+alpaca_trade_client::get_position(
+  const std::string  &symbol_or_asset_id,
+  CompletionHandler &&handler)
+{
+  auto req_info {
+    request_info { http::verb::get,
+                  boost::url { "/v2/positions/" + symbol_or_asset_id } }
+  };
+  execute_async_request(
+    req_info,
+    std::forward<CompletionHandler>(handler),
+    parse_response);
+}
 
-  LOG_DEBUG(alpaca_trade_client, create_order_request)
-    << "Request body: " << req.body();
+template <typename CompletionHandler>
+void
+alpaca_trade_client::close_all_positions(
+  bool                cancel_orders,
+  CompletionHandler &&handler)
+{
+  boost::url url { "/v2/positions" };
+  if (cancel_orders)
+    {
+      url.params().append({ "cancel_orders", "true" });
+    }
+  auto req_info {
+    request_info { http::verb::delete_, url }
+  };
 
-  req.prepare_payload();
+  execute_async_request(
+    req_info,
+    std::forward<CompletionHandler>(handler),
+    parse_positions_response);
+}
 
-  setup_request_headers(req);
+template <typename CompletionHandler>
+void
+alpaca_trade_client::close_position(
+  const std::string  &symbol_or_asset_id,
+  CompletionHandler &&handler)
+{
+  auto req_info {
+    request_info { http::verb::delete_,
+                  boost::url { "/v2/positions/" + symbol_or_asset_id } }
+  };
+  execute_async_request(
+    req_info,
+    std::forward<CompletionHandler>(handler),
+    parse_order_response);
+}
 
-  return req;
+template <typename CompletionHandler>
+void
+alpaca_trade_client::close_position(
+  const std::string  &symbol_or_asset_id,
+  const qty_t        &qty,
+  CompletionHandler &&handler)
+{
+  auto req_info {
+    request_info { http::verb::delete_,
+                  boost::url { "/v2/positions/" + symbol_or_asset_id } }
+  };
+  req_info.url.params().append({ "qty", qty.value });
+
+  execute_async_request(
+    req_info,
+    std::forward<CompletionHandler>(handler),
+    parse_order_response);
+}
+
+template <typename CompletionHandler>
+void
+alpaca_trade_client::close_position(
+  const std::string  &symbol_or_asset_id,
+  const percentage_t &percentage,
+  CompletionHandler &&handler)
+{
+  auto req_info {
+    request_info { http::verb::delete_,
+                  boost::url { "/v2/positions/" + symbol_or_asset_id } }
+  };
+  req_info.url.params().append({ "percentage", percentage.value });
+
+  execute_async_request(
+    req_info,
+    std::forward<CompletionHandler>(handler),
+    parse_order_response);
 }

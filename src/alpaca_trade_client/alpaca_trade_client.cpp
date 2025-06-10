@@ -125,7 +125,9 @@ nlohmann::json
 alpaca_trade_client::parse_response(
   const http::response<http::string_body> &response)
 {
-  if (response.result() == http::status::ok)
+  if (
+    response.result() == http::status::ok
+    || response.result() == http::status::multi_status)
     {
       try
         {
@@ -177,6 +179,78 @@ alpaca_trade_client::parse_response(
   throw std::runtime_error(error_msg);
 }
 
+nlohmann::json
+alpaca_trade_client::parse_order_response(
+  const http::response<http::string_body> &response)
+{
+  auto json_response { parse_response(response) };
+
+  if (json_response.is_array() && !json_response.empty())
+    {
+      return json_response[0];
+    }
+
+  return json_response;
+}
+
+nlohmann::json
+alpaca_trade_client::parse_positions_response(
+  const http::response<http::string_body> &response)
+{
+  if (
+    response.result() == http::status::ok
+    || response.result() == http::status::multi_status)
+    {
+      try
+        {
+          return nlohmann::json::parse(response.body());
+        }
+      catch (const nlohmann::json::parse_error &e)
+        {
+          LOG_ERROR(alpaca_trade_client, parse_positions_response)
+            << "Failed to parse JSON response: " << e.what();
+          throw std::runtime_error(
+            "Invalid JSON in API response: " + std::string(e.what()));
+        }
+    }
+
+  std::string error_msg { std::format("HTTP {}", response.result_int()) };
+
+  if (response.result() == http::status::forbidden)
+    {
+      error_msg += " - Forbidden: Insufficient buying power";
+    }
+  else if (response.result() == http::status::unprocessable_entity)
+    {
+      error_msg += " - Unprocessable Entity: Input parameters not recognized";
+    }
+  else
+    {
+      LOG_WARNING(alpaca_trade_client, parse_positions_response)
+        << "Unrecognized error code from Alpaca API: " << response.result();
+      error_msg += " - Unrecognized error code";
+    }
+
+  if (!response.body().empty())
+    {
+      try
+        {
+          auto error_json { nlohmann::json::parse(response.body()) };
+          if (error_json.contains("message"))
+            {
+              error_msg += ": " + error_json["message"].get<std::string>();
+            }
+        }
+      catch (const nlohmann::json::parse_error &)
+        {
+          error_msg += ": " + response.body();
+        }
+    }
+
+  LOG_ERROR(alpaca_trade_client, parse_positions_response) << error_msg;
+  throw std::runtime_error(error_msg);
+}
+
 //
 // Private methods
 
@@ -210,14 +284,14 @@ alpaca_trade_client::send_next_request()
 {
   _request_in_progress = true;
 
-  auto &pending_req { _request_queue.front() };
+  auto &current_task { _request_queue.front() };
 
   LOG_DEBUG(alpaca_trade_client, send_next_request)
-    << "Sending request to " << pending_req._request.target();
+    << "Sending request to " << current_task._request.target();
 
   http::async_write(
     _stream,
-    pending_req._request,
+    current_task._request,
     [self = shared_from_this()](
       beast::error_code ec,
       std::size_t bytes_transferred) {
@@ -237,8 +311,8 @@ alpaca_trade_client::on_write(
       LOG_ERROR(alpaca_trade_client, on_write)
         << "Failed to write request: " << ec.message();
 
-      auto &pending_req { _request_queue.front() };
-      pending_req._handler(ec, nlohmann::json {});
+      auto &current_task { _request_queue.front() };
+      current_task._handler(ec, nlohmann::json {});
       _request_queue.pop();
       _request_in_progress = false;
 
@@ -267,14 +341,14 @@ alpaca_trade_client::on_read(
 {
   boost::ignore_unused(bytes_transferred);
 
-  auto &pending_req { _request_queue.front() };
+  auto &current_task { _request_queue.front() };
 
   if (ec)
     {
       LOG_ERROR(alpaca_trade_client, on_read)
         << "Failed to read response: " << ec.message();
 
-      pending_req._handler(ec, nlohmann::json {});
+      current_task._handler(ec, nlohmann::json {});
     }
   else
     {
@@ -283,8 +357,8 @@ alpaca_trade_client::on_read(
 
       try
         {
-          auto json_response { parse_response(_response) };
-          pending_req._handler(ec, json_response);
+          auto json_response { current_task._response_parser(_response) };
+          current_task._handler(ec, json_response);
         }
       catch (const std::exception &e)
         {
@@ -293,7 +367,7 @@ alpaca_trade_client::on_read(
 
           auto parse_error { boost::system::errc::make_error_code(
             boost::system::errc::invalid_argument) };
-          pending_req._handler(parse_error, nlohmann::json {});
+          current_task._handler(parse_error, nlohmann::json {});
         }
     }
 
@@ -303,4 +377,26 @@ alpaca_trade_client::on_read(
   _buffer.clear();
 
   process_request_queue();
+}
+
+http::request<http::string_body>
+alpaca_trade_client::create_request(const request_info &req_info)
+{
+  http::request<http::string_body> req { req_info.verb,
+                                         req_info.url.encoded_target(),
+                                         11 };
+
+  req.set(http::field::host, _host);
+
+  if (!req_info.body.empty())
+    {
+      req.body() = req_info.body;
+      LOG_DEBUG(alpaca_trade_client, create_request)
+        << "Request body: " << req.body();
+    }
+
+  req.prepare_payload();
+  setup_request_headers(req);
+
+  return req;
 }

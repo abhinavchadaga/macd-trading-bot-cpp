@@ -36,28 +36,62 @@ protected:
     _ssl_ctx.reset();
   }
 
+  static void
+  skip_if_environment_variables_missing()
+  {
+    const char *api_key { std::getenv("ALPACA_API_KEY") };
+    const char *api_secret { std::getenv("ALPACA_API_SECRET") };
+
+    if (!api_key || !api_secret)
+      {
+        GTEST_SKIP() << "Set ALPACA_API_KEY and ALPACA_API_SECRET environment "
+                        "variables to run this test";
+      }
+  }
+
+  static alpaca_trade_client::config
+  create_test_config()
+  {
+    const char *api_key { std::getenv("ALPACA_API_KEY") };
+    const char *api_secret { std::getenv("ALPACA_API_SECRET") };
+
+    alpaca_trade_client::config cfg {};
+    cfg.api_key    = api_key;
+    cfg.secret_key = api_secret;
+    cfg.endpoint   = "https://paper-api.alpaca.markets";
+    cfg.timeout    = std::chrono::seconds { 10 };
+
+    return cfg;
+  }
+
+  std::shared_ptr<alpaca_trade_client>
+  create_client()
+  {
+    return alpaca_trade_client::create(*_ioc, *_ssl_ctx);
+  }
+
+  std::shared_ptr<alpaca_trade_client>
+  create_connected_client()
+  {
+    skip_if_environment_variables_missing();
+
+    auto client { create_client() };
+    auto cfg { create_test_config() };
+
+    client->connect(cfg);
+    return client;
+  }
+
   std::unique_ptr<net::io_context> _ioc;
   std::unique_ptr<ssl::context>    _ssl_ctx;
 };
 
 TEST_F(AlpacaTradeClientTest, ConnectsToAlpacaPaperEndpointSuccessfully)
 {
-  const char *api_key { std::getenv("ALPACA_API_KEY") };
-  const char *api_secret { std::getenv("ALPACA_API_SECRET") };
+  skip_if_environment_variables_missing();
 
-  if (!api_key || !api_secret)
-    {
-      GTEST_SKIP() << "Set ALPACA_API_KEY and ALPACA_API_SECRET environment "
-                      "variables to run this test";
-    }
-
-  auto client { alpaca_trade_client::create(*_ioc, *_ssl_ctx) };
-
-  alpaca_trade_client::config cfg {};
-  cfg.api_key    = api_key;
-  cfg.secret_key = api_secret;
-  cfg.endpoint   = "https://paper-api.alpaca.markets";
-  cfg.timeout    = std::chrono::seconds { 10 };
+  auto client { create_client() };
+  auto cfg { create_test_config() };
 
   EXPECT_FALSE(client->is_connected())
     << "Client should not be connected initially";
@@ -76,7 +110,7 @@ TEST_F(AlpacaTradeClientTest, ConnectsToAlpacaPaperEndpointSuccessfully)
 
 TEST_F(AlpacaTradeClientTest, ThrowsErrorForInvalidEndpoint)
 {
-  auto client { alpaca_trade_client::create(*_ioc, *_ssl_ctx) };
+  auto client { create_client() };
 
   alpaca_trade_client::config cfg {};
   cfg.api_key    = "test_key";
@@ -98,7 +132,7 @@ TEST_F(AlpacaTradeClientTest, ThrowsErrorForInvalidEndpoint)
 
 TEST_F(AlpacaTradeClientTest, DisconnectWhenNotConnectedLogsWarning)
 {
-  auto client { alpaca_trade_client::create(*_ioc, *_ssl_ctx) };
+  auto client { create_client() };
 
   EXPECT_FALSE(client->is_connected())
     << "Client should not be connected initially";
@@ -111,24 +145,8 @@ TEST_F(AlpacaTradeClientTest, DisconnectWhenNotConnectedLogsWarning)
 
 TEST_F(AlpacaTradeClientTest, SubmitMarketOrderForPLTRWithExtendedHours)
 {
-  const char *api_key { std::getenv("ALPACA_API_KEY") };
-  const char *api_secret { std::getenv("ALPACA_API_SECRET") };
+  auto client { create_connected_client() };
 
-  if (!api_key || !api_secret)
-    {
-      GTEST_SKIP() << "Set ALPACA_API_KEY and ALPACA_API_SECRET environment "
-                      "variables to run this test";
-    }
-
-  auto client { alpaca_trade_client::create(*_ioc, *_ssl_ctx) };
-
-  alpaca_trade_client::config cfg {};
-  cfg.api_key    = api_key;
-  cfg.secret_key = api_secret;
-  cfg.endpoint   = "https://paper-api.alpaca.markets";
-  cfg.timeout    = std::chrono::seconds { 10 };
-
-  client->connect(cfg);
   ASSERT_TRUE(client->is_connected())
     << "Client must be connected to submit order";
 
@@ -136,13 +154,14 @@ TEST_F(AlpacaTradeClientTest, SubmitMarketOrderForPLTRWithExtendedHours)
   order.symbol         = "PLTR";
   order.qty            = "1";
   order.side           = OrderSide::BUY;
-  order.time_in_force  = TimeInForce::DAY;
-  order.limit_price    = "10000.00"; // this is never going to be filled
+  order.time_in_force  = TimeInForce::GTC;
+  order.limit_price    = "0.01";
   order.extended_hours = true;
 
-  std::atomic<bool>         order_completed { false };
   boost::system::error_code received_error {};
   nlohmann::json            received_response {};
+
+  std::atomic<bool> order_completed { false };
 
   client->submit_order(
     order,
@@ -189,38 +208,159 @@ TEST_F(AlpacaTradeClientTest, SubmitMarketOrderForPLTRWithExtendedHours)
 
   if (!received_response.empty())
     {
+      EXPECT_TRUE(received_response.contains("id"))
+        << "Order should contain order ID";
+      EXPECT_TRUE(received_response.contains("symbol"))
+        << "Order should contain symbol";
+      EXPECT_EQ(received_response["symbol"], "PLTR")
+        << "Order symbol should match order symbol";
+      EXPECT_TRUE(received_response.contains("side"))
+        << "Order should contain side";
+      EXPECT_EQ(received_response["side"], "buy")
+        << "Order side should match order side";
+      EXPECT_TRUE(received_response.contains("qty"))
+        << "Order should contain quantity";
+      EXPECT_EQ(received_response["qty"], "1")
+        << "Order quantity should match order quantity";
+      EXPECT_TRUE(received_response.contains("extended_hours"))
+        << "Order should contain extended_hours flag";
+      EXPECT_TRUE(received_response["extended_hours"])
+        << "Order extended_hours should be true";
+    }
+
+  client->disconnect();
+}
+
+TEST_F(AlpacaTradeClientTest, CloseAllPositionsAfterSubmittingOrder)
+{
+  auto client { create_connected_client() };
+
+  ASSERT_TRUE(client->is_connected())
+    << "Client must be connected to close positions";
+
+  boost::system::error_code received_error {};
+  nlohmann::json            received_response {};
+
+  std::atomic<bool> close_completed { false };
+
+  client->close_all_positions(
+    true,
+    [&](boost::system::error_code ec, const nlohmann::json &response) {
+      received_error    = ec;
+      received_response = response;
+      close_completed   = true;
+    });
+
+  std::thread io_thread([this]() {
+    _ioc->run();
+  });
+
+  const auto     start_time = std::chrono::steady_clock::now();
+  constexpr auto timeout    = std::chrono::seconds(30);
+
+  while (!close_completed
+         && (std::chrono::steady_clock::now() - start_time) < timeout)
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+  _ioc->stop();
+
+  if (io_thread.joinable())
+    {
+      io_thread.join();
+    }
+
+  EXPECT_TRUE(close_completed.load())
+    << "Close positions completion handler should be called";
+
+  if (received_error)
+    {
+      FAIL() << "Close all positions failed with error: "
+             << received_error.message()
+             << " (code: " << received_error.value() << ")";
+    }
+
+  LOG_DEBUG(AlpacaTradeClientTest, CloseAllPositionsAfterSubmittingOrder)
+    << "Received response: " << received_response.dump();
+
+  if (!received_response.empty())
+    {
       EXPECT_TRUE(received_response.is_array())
-        << "Response should be a JSON array";
-      EXPECT_EQ(received_response.size(), 1)
-        << "Response array should contain exactly one order";
+        << "Close all positions response should be an array";
 
-      if (received_response.is_array() && received_response.size() == 1)
+      if (received_response.is_array() && !received_response.empty())
         {
-          const auto &order_obj = received_response.at(0);
-
-          EXPECT_TRUE(order_obj.is_object())
-            << "Extracted order should be a JSON object";
-
-          EXPECT_TRUE(order_obj.contains("id"))
-            << "Order should contain order ID";
-          EXPECT_TRUE(order_obj.contains("symbol"))
-            << "Order should contain symbol";
-          EXPECT_EQ(order_obj["symbol"], "PLTR")
-            << "Order symbol should match order symbol";
-          EXPECT_TRUE(order_obj.contains("side"))
-            << "Order should contain side";
-          EXPECT_EQ(order_obj["side"], "buy")
-            << "Order side should match order side";
-          EXPECT_TRUE(order_obj.contains("qty"))
-            << "Order should contain quantity";
-          EXPECT_EQ(order_obj["qty"], "1")
-            << "Order quantity should match order quantity";
-          EXPECT_TRUE(order_obj.contains("extended_hours"))
-            << "Order should contain extended_hours flag";
-          EXPECT_TRUE(order_obj["extended_hours"])
-            << "Order extended_hours should be true";
+          for (const auto &close_result : received_response)
+            {
+              EXPECT_TRUE(close_result.contains("symbol"))
+                << "Each close result should contain symbol";
+              EXPECT_TRUE(close_result.contains("status"))
+                << "Each close result should contain status";
+            }
         }
     }
+
+  client->disconnect();
+}
+
+TEST_F(AlpacaTradeClientTest, VerifyNoOpenPositionsAfterClosingAll)
+{
+  auto client { create_connected_client() };
+
+  ASSERT_TRUE(client->is_connected())
+    << "Client must be connected to get positions";
+
+  boost::system::error_code received_error {};
+  nlohmann::json            received_response {};
+
+  std::atomic<bool> positions_completed { false };
+
+  client->get_all_positions(
+    [&](boost::system::error_code ec, const nlohmann::json &response) {
+      received_error      = ec;
+      received_response   = response;
+      positions_completed = true;
+    });
+
+  std::thread io_thread([this]() {
+    _ioc->run();
+  });
+
+  const auto     start_time = std::chrono::steady_clock::now();
+  constexpr auto timeout    = std::chrono::seconds(30);
+
+  while (!positions_completed
+         && (std::chrono::steady_clock::now() - start_time) < timeout)
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+  _ioc->stop();
+
+  if (io_thread.joinable())
+    {
+      io_thread.join();
+    }
+
+  EXPECT_TRUE(positions_completed.load())
+    << "Get all positions completion handler should be called";
+
+  if (received_error)
+    {
+      FAIL() << "Get all positions failed with error: "
+             << received_error.message()
+             << " (code: " << received_error.value() << ")";
+    }
+
+  LOG_DEBUG(AlpacaTradeClientTest, VerifyNoOpenPositionsAfterClosingAll)
+    << "Received response: " << received_response.dump();
+
+  EXPECT_TRUE(received_response.is_array())
+    << "Get all positions response should be an array";
+
+  EXPECT_TRUE(received_response.empty())
+    << "Should have no open positions after closing all positions";
 
   client->disconnect();
 }
