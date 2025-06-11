@@ -2,15 +2,13 @@
 #include "async_rest_client/typed_task.hpp"
 
 #include <boost/asio/co_spawn.hpp>
-#include <boost/asio/detached.hpp>
 #include <boost/asio/use_future.hpp>
-#include <boost/system/system_error.hpp>
 #include <gtest/gtest.h>
 
 TEST(AsyncRestClientTest, CanCreateClient)
 {
   boost::asio::io_context ioc {};
-  auto client = async_rest_client::async_rest_client::create(ioc);
+  const auto client = async_rest_client::async_rest_client::create(ioc);
   ASSERT_NE(client, nullptr);
 }
 
@@ -20,7 +18,8 @@ TEST(AsyncRestClientTest, CanInstantiateConnectionContext)
   async_rest_client::beast::tcp_stream  tcp_stream { ioc };
   async_rest_client::beast::flat_buffer buffer {};
 
-  async_rest_client::http_connection_context http_ctx { tcp_stream, buffer };
+  const async_rest_client::http_connection_context http_ctx { tcp_stream,
+                                                              buffer };
   EXPECT_EQ(&http_ctx.stream, &tcp_stream);
   EXPECT_EQ(&http_ctx.buffer, &buffer);
 }
@@ -175,10 +174,10 @@ TEST(AsyncRestClientTest, SequentialConnectionsToDifferentHosts)
   auto connect_future { boost::asio::co_spawn(
     ioc,
     [client]() -> boost::asio::awaitable<void> {
-      bool result1 = co_await client->connect("https://httpbin.org");
+      const bool result1 = co_await client->connect("https://httpbin.org");
       EXPECT_TRUE(result1);
 
-      bool result2 = co_await client->connect("https://google.com");
+      const bool result2 = co_await client->connect("https://google.com");
       EXPECT_TRUE(result2);
     },
     boost::asio::use_future) };

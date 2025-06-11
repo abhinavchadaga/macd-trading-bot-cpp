@@ -35,8 +35,6 @@ public:
 
   static std::shared_ptr<async_rest_client> create(net::io_context &ioc);
 
-  explicit async_rest_client(net::io_context &ioc);
-
   net::awaitable<bool> connect(std::string_view url);
 
   template <typename ResponseBody>
@@ -54,6 +52,8 @@ public:
     typename RequestBody::value_type body);
 
 private:
+
+  explicit async_rest_client(net::io_context &ioc);
 
   std::deque<std::unique_ptr<base_task>> _tasks;
   bool                                   _processing { false };
