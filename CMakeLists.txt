@@ -14,6 +14,7 @@ include_directories(third-party)
 
 add_subdirectory(src)
 add_subdirectory(third-party)
+add_subdirectory(logging_utils)
 add_subdirectory(async_rest_client)
 
 enable_testing()

@@ -21,6 +21,13 @@ namespace net       = boost::asio;
 namespace ssl       = boost::asio::ssl;
 using tcp           = boost::asio::ip::tcp;
 
+enum class connection_state
+{
+  NOT_CONNECTED,
+  CONNECTING,
+  CONNECTED
+};
+
 class async_rest_client
   : public std::enable_shared_from_this<async_rest_client>
 {
@@ -30,7 +37,7 @@ public:
 
   explicit async_rest_client(net::io_context &ioc);
 
-  void connect(const std::string &url);
+  net::awaitable<bool> connect(std::string_view url);
 
   template <typename ResponseBody>
     requires SupportedResponseBody<ResponseBody>
@@ -57,8 +64,8 @@ private:
   beast::ssl_stream<beast::tcp_stream> _ssl_stream;
   beast::flat_buffer                   _buffer {};
 
-  boost::urls::url _current_host {};
-  bool             _is_connected { false };
+  boost::url       _current_host {};
+  connection_state _connection_state { connection_state::NOT_CONNECTED };
   bool             _is_tls { false };
 };
 

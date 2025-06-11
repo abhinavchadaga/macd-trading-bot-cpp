@@ -6,7 +6,10 @@ add_executable(TestAsyncRestClient
 )
 
 target_link_libraries(TestAsyncRestClient
+    logging_utils
     async_rest_client
+    Boost::system
+    Boost::url
     GTest::gtest_main
     GTest::gtest
 )
