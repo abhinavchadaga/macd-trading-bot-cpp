@@ -46,36 +46,16 @@ This document outlines the implementation plan to enhance the `async_rest_client
 
 #### 2.1 Enhance connection state tracking
 
-- Add `_current_host` and `_current_port` members (strings)
+- Add `_current_url` member (boost::url) to track the currently connected URL
 - Add `is_connected_to(const boost::url& url)` method using `url.host()` and port logic
-- Add `needs_reconnection(const boost::url& url)` method
 
 #### 2.2 Connection management methods
 
 - Add `connect_to_url(const boost::url& url)` private method
 - Extract host/port from URL using:
   - `url.host()` for hostname
-  - `url.port()` if `url.has_port()` is true
-  - Otherwise use scheme-based defaults: "443" for HTTPS, "80" for HTTP
-- Update existing `connect()` method to set `_current_host` and `_current_port`
-
-#### 2.3 Port resolution logic
-
-```cpp
-std::string get_effective_port(const boost::url& url) {
-    if (url.has_port()) {
-        return url.port();
-    }
-    
-    if (url.scheme() == "https") {
-        return "443";
-    } else if (url.scheme() == "http") {
-        return "80";
-    }
-    
-    throw std::invalid_argument("Unsupported scheme");
-}
-```
+  - `url.port()` for port
+- Update existing `connect()` method to set `_current_url` from host/port parameters
 
 ### Phase 3: Request Processing Flow Updates
 

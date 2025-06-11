@@ -51,10 +51,7 @@ public:
   //
   // Connection methods
 
-  void connect(
-    const std::string     &host,
-    const std::string     &port,
-    req_completion_handler handler);
+  void connect();
   void disconnect();
   bool is_connected() const;
 
@@ -91,22 +88,20 @@ private:
   void on_read(boost::system::error_code ec);
 
   void on_resolve(
-    boost::system::error_code            ec,
-    net::ip::tcp::resolver::results_type results,
-    req_completion_handler               handler);
+    boost::system::error_code                   ec,
+    const net::ip::tcp::resolver::results_type &results);
 
   void on_connect(
     boost::system::error_code ec,
-    net::ip::tcp::resolver::results_type::endpoint_type,
-    req_completion_handler handler);
+    const net::ip::tcp::resolver::results_type::endpoint_type &);
 
-  void on_handshake(
-    boost::system::error_code ec,
-    req_completion_handler    handler);
+  void on_handshake(boost::system::error_code ec);
 
   void start_timeout();
   void cancel_timeout();
   void on_timeout(boost::system::error_code ec);
+
+  bool is_connected_to(const boost::url &url) const;
 
   net::io_context &_ioc;
   ssl::context    &_ssl_ctx;
@@ -117,10 +112,9 @@ private:
   beast::flat_buffer                   _buffer;
   net::steady_timer                    _timer;
 
-  std::string _host;
-  std::string _port;
-  bool        _connected { false };
-  bool        _connecting { false };
+  boost::url _current_url;
+  bool       _connected { false };
+  bool       _connecting { false };
 
   std::queue<std::shared_ptr<detail::base_task>> _task_queue;
   std::shared_ptr<detail::base_task>             _current_task;
@@ -134,14 +128,17 @@ async_rest_client::get(
   const http::fields    &header_params,
   req_completion_handler handler)
 {
+  boost::url parsed_url { url };
+
   auto writer = request_builder<http::empty_body>::build(
-    url,
+    parsed_url,
     header_params,
     _config.user_agent);
 
   auto reader = response_parser<ResponseBody>::create_reader();
 
   auto task = detail::typed_task<http::empty_body, ResponseBody>::create(
+    url,
     writer,
     reader,
     handler);

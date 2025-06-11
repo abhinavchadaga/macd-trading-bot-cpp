@@ -54,6 +54,12 @@ public:
   }
 
   void
+  on_error(boost::system::error_code ec) override
+  {
+    _user_handler(ec, "");
+  }
+
+  void
   write(
     beast::ssl_stream<beast::tcp_stream>          &stream,
     std::function<void(boost::system::error_code)> on_write) override

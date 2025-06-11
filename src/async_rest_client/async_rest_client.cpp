@@ -62,7 +62,7 @@ async_rest_client::process_request_queue()
 {
   LOG_DEBUG(async_rest_client, process_request_queue);
 
-  if (_request_in_progress || _task_queue.empty() || !_connected)
+  if (_request_in_progress || _task_queue.empty())
     {
       return;
     }
@@ -80,10 +80,21 @@ async_rest_client::send_next_request()
       return;
     }
 
-  _current_task = _task_queue.front();
+  _current_task = std::move(_task_queue.front());
   _task_queue.pop();
-  _request_in_progress = true;
 
+  if (!is_connected_to(_current_task->url()))
+    {
+      if (_connected)
+        {
+          disconnect();
+        }
+
+      connect();
+      return;
+    }
+
+  _request_in_progress = true;
   start_timeout();
 
   _current_task->write(
@@ -101,6 +112,7 @@ async_rest_client::on_write(boost::system::error_code ec)
   if (ec)
     {
       LOG_ERROR(async_rest_client, on_write);
+      _current_task->on_error(ec);
       _request_in_progress = false;
       _current_task.reset();
       process_request_queue();
@@ -126,6 +138,7 @@ async_rest_client::on_read(boost::system::error_code ec)
   if (ec)
     {
       LOG_ERROR(async_rest_client, on_read);
+      _current_task->on_error(ec);
     }
   else
     {
@@ -140,97 +153,97 @@ async_rest_client::on_read(boost::system::error_code ec)
 }
 
 void
-async_rest_client::connect(
-  const std::string     &host,
-  const std::string     &port,
-  req_completion_handler handler)
+async_rest_client::connect()
 {
   if (_connecting || _connected)
     {
       LOG_WARNING(async_rest_client, connect);
-      handler(
-        boost::system::errc::make_error_code(
-          boost::system::errc::already_connected),
-        "");
+      _current_task->on_error(boost::system::errc::make_error_code(
+        boost::system::errc::already_connected));
+      _current_task.reset();
+      process_request_queue();
       return;
     }
 
   LOG_INFO(async_rest_client, connect);
-  _connecting = true;
-  _host       = host;
-  _port       = port;
+  _connecting  = true;
+  _current_url = _current_task->url();
 
   start_timeout();
 
-  if (!SSL_set_tlsext_host_name(_stream.native_handle(), host.c_str()))
+  if (!SSL_set_tlsext_host_name(
+        _stream.native_handle(),
+        _current_task->url().host().c_str()))
     {
       boost::system::error_code ec { static_cast<int>(::ERR_get_error()),
                                      net::error::get_ssl_category() };
       LOG_ERROR(async_rest_client, connect);
       _connecting = false;
       cancel_timeout();
-      handler(ec, "");
+      _current_task->on_error(ec);
+      _current_task.reset();
+      process_request_queue();
       return;
     }
 
   _resolver.async_resolve(
-    host,
-    port,
-    [self = shared_from_this(), handler](auto ec, auto results) {
-      self->on_resolve(ec, results, handler);
+    _current_task->url().host(),
+    _current_task->url().port(),
+    [self = shared_from_this()](auto ec, auto results) {
+      self->on_resolve(ec, results);
     });
 }
 
 void
 async_rest_client::on_resolve(
-  boost::system::error_code            ec,
-  net::ip::tcp::resolver::results_type results,
-  req_completion_handler               handler)
+  boost::system::error_code                   ec,
+  const net::ip::tcp::resolver::results_type &results)
 {
   if (ec)
     {
       LOG_ERROR(async_rest_client, on_resolve);
       _connecting = false;
       cancel_timeout();
-      handler(ec, "");
+      _current_task->on_error(ec);
+      _current_task.reset();
+      process_request_queue();
       return;
     }
 
   LOG_DEBUG(async_rest_client, on_resolve);
   beast::get_lowest_layer(_stream).async_connect(
     results,
-    [self = shared_from_this(), handler](auto ec, auto endpoint) {
-      self->on_connect(ec, endpoint, handler);
+    [self = shared_from_this()](auto ec, auto endpoint) {
+      self->on_connect(ec, endpoint);
     });
 }
 
 void
 async_rest_client::on_connect(
   boost::system::error_code ec,
-  net::ip::tcp::resolver::results_type::endpoint_type,
-  req_completion_handler handler)
+  const net::ip::tcp::resolver::results_type::endpoint_type &)
 {
   if (ec)
     {
       LOG_ERROR(async_rest_client, on_connect);
       _connecting = false;
       cancel_timeout();
-      handler(ec, "");
+      _current_task->on_error(ec);
+      _current_task.reset();
+      process_request_queue();
       return;
     }
 
   LOG_DEBUG(async_rest_client, on_connect);
   _stream.async_handshake(
     ssl::stream_base::client,
-    [self = shared_from_this(), handler](auto ec) {
-      self->on_handshake(ec, handler);
+    [self = shared_from_this()](auto ec) {
+      self->on_handshake(ec);
     });
 }
 
 void
-async_rest_client::on_handshake(
-  boost::system::error_code ec,
-  req_completion_handler    handler)
+async_rest_client::on_handshake(boost::system::error_code ec)
 {
   _connecting = false;
   cancel_timeout();
@@ -238,15 +251,23 @@ async_rest_client::on_handshake(
   if (ec)
     {
       LOG_ERROR(async_rest_client, on_handshake);
-      handler(ec, "");
+      _current_task->on_error(ec);
+      _current_task.reset();
+      process_request_queue();
       return;
     }
 
   LOG_INFO(async_rest_client, on_handshake);
   _connected = true;
-  handler({}, "Connected");
 
-  process_request_queue();
+  _request_in_progress = true;
+  start_timeout();
+
+  _current_task->write(
+    _stream,
+    [self = shared_from_this()](boost::system::error_code ec) {
+      self->on_write(ec);
+    });
 }
 
 void
@@ -286,6 +307,18 @@ async_rest_client::is_connected() const
   return _connected;
 }
 
+bool
+async_rest_client::is_connected_to(const boost::url &url) const
+{
+  if (!_connected)
+    {
+      return false;
+    }
+
+  return url.host() == _current_url.host()
+      && url.port() == _current_url.port();
+}
+
 void
 async_rest_client::start_timeout()
 {
@@ -319,6 +352,5 @@ async_rest_client::on_timeout(boost::system::error_code ec)
   LOG_WARNING(async_rest_client, on_timeout);
   disconnect();
 }
-
 
 } // namespace async_rest_client

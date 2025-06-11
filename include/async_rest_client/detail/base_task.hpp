@@ -15,11 +15,16 @@ class base_task
 {
 public:
 
+  using completion_handler
+    = std::function<void(boost::system::error_code, const std::string &)>;
+
   virtual ~base_task() = default;
 
   [[nodiscard]]
   virtual const boost::url &url() const
     = 0;
+
+  virtual void on_error(boost::system::error_code ec) = 0;
 
   virtual void write(
     beast::ssl_stream<beast::tcp_stream>          &stream,
