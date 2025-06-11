@@ -1,0 +1,35 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Project Architecture and Organization
+
+## File Structure
+- Header files go in [include/](mdc:include) with matching implementation in [src/](mdc:src)
+- Each major component has its own subdirectory (e.g., [include/alpaca_trade_client/](mdc:include/alpaca_trade_client), [src/alpaca_trade_client/](mdc:src/alpaca_trade_client))
+- Test files follow the pattern `Test<ComponentName>.cpp` in [tests/](mdc:tests)
+- Examples go in [examples/](mdc:examples) directory
+
+## Header File Patterns
+- Use `#pragma once` for header guards
+- Group includes by: system headers, third-party libraries, project headers
+- Use forward declarations when possible to reduce compilation dependencies
+- Template implementations should be included in the header file
+
+## Class Design Patterns
+- Use `std::enable_shared_from_this` for classes that need to create shared_ptr to themselves
+- Private constructors with static `create()` factory methods for shared resource classes
+- Configuration structs as nested types within the class they configure
+- Template member functions for generic operations (like [alpaca_trade_client::submit_order](mdc:include/alpaca_trade_client/alpaca_trade_client.hpp))
+
+## Component Architecture
+- Follow the Proactor pattern for event-driven, single-threaded asynchronous operations
+- Components should be mockable for testing and backtesting
+- Use dependency injection through constructor parameters
+- Separate concerns: data processing, network I/O, business logic, and trading execution
+
+## Naming Conventions
+- Snake_case for file names, classes, functions, and variables
+- All caps with underscores for macros and constants
+- Component names should be descriptive of their responsibility (e.g., `BarAggregator`, `IndicatorEngine`)
