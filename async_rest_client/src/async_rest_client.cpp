@@ -3,7 +3,6 @@
 #include "LoggingUtils.hpp"
 
 #include <boost/asio/co_spawn.hpp>
-#include <boost/asio/detached.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/use_awaitable.hpp>
 #include <boost/url.hpp>
@@ -69,8 +68,7 @@ async_rest_client::connect(std::string_view url)
   _is_tls       = (scheme == "https");
   _current_host = parsed_url;
 
-  tcp::resolver             resolver { _ioc };
-  boost::system::error_code ec;
+  tcp::resolver resolver { _ioc };
   auto [resolve_ec, endpoints] { co_await resolver.async_resolve(
     host,
     port,
@@ -86,6 +84,7 @@ async_rest_client::connect(std::string_view url)
     {
       if (!SSL_set_tlsext_host_name(_ssl_stream.native_handle(), host.c_str()))
         {
+          boost::system::error_code ec;
           ec.assign(
             static_cast<int>(::ERR_get_error()),
             net::error::get_ssl_category());
