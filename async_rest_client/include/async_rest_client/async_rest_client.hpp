@@ -21,13 +21,6 @@ namespace net       = boost::asio;
 namespace ssl       = boost::asio::ssl;
 using tcp           = boost::asio::ip::tcp;
 
-enum class connection_state
-{
-  NOT_CONNECTED,
-  CONNECTING,
-  CONNECTED
-};
-
 class async_rest_client
   : public std::enable_shared_from_this<async_rest_client>
 {
@@ -52,6 +45,13 @@ public:
     typename RequestBody::value_type body);
 
 private:
+
+  enum class connection_state
+  {
+    NOT_CONNECTED,
+    CONNECTING,
+    CONNECTED
+  };
 
   explicit async_rest_client(net::io_context &ioc);
 
