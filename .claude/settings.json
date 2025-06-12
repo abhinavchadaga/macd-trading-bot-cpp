@@ -1,0 +1,23 @@
+{
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(./configure.sh:*)",
+      "Bash(./build.sh:*)",
+      "Bash(./run_tests.sh:*)",
+      "Bash(./build/Debug:*)",
+      "Bash(find:*)",
+      "Bash(bat:*)",
+      "WebFetch(:*)",
+      "WebSearch(:*)",
+      "mcp__context7",
+      "mcp__sequential-thinking:sequential-thinking"
+    ],
+    "deny": [
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true
+}

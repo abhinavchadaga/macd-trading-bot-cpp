@@ -26,8 +26,9 @@ public:
     http::fields                 headers,
     typename ReqBody::value_type request_payload);
 
-  bool run(http_connection_context &ctx) override;
-  bool run(https_connection_context &ctx) override;
+  net::awaitable<bool> run(http_connection_context &ctx) override;
+  net::awaitable<bool> run(https_connection_context &ctx) override;
+  const boost::url    &endpoint() const override;
 
   std::shared_future<http::response<ResBody>>
   get_shared_future()
@@ -38,7 +39,7 @@ public:
 private:
 
   template <SupportedStreamType Stream>
-  bool run_impl(Stream &stream, beast::flat_buffer &buffer);
+  net::awaitable<bool> run_impl(Stream &stream, beast::flat_buffer &buffer);
 
   std::promise<http::response<ResBody>> _promise;
   boost::url                            _endpoint;

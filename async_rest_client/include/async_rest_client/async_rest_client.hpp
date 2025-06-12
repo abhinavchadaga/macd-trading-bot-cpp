@@ -28,7 +28,9 @@ public:
 
   static std::shared_ptr<async_rest_client> create(net::io_context &ioc);
 
-  net::awaitable<bool> connect(std::string_view url);
+  ~async_rest_client();
+
+  net::awaitable<bool> connect(std::string_view url_sv);
 
   template <typename ResponseBody>
     requires SupportedResponseBody<ResponseBody>
@@ -55,8 +57,12 @@ private:
 
   explicit async_rest_client(net::io_context &ioc);
 
+  net::awaitable<void> process_queue();
+  void                 enqueue_task(std::unique_ptr<base_task> task);
+  net::awaitable<void> graceful_shutdown();
+
   std::deque<std::unique_ptr<base_task>> _tasks;
-  bool                                   _processing { false };
+  bool                                   _is_processing { false };
 
   net::io_context                     &_ioc;
   ssl::context                         _ssl_ctx;
@@ -64,7 +70,7 @@ private:
   beast::ssl_stream<beast::tcp_stream> _ssl_stream;
   beast::flat_buffer                   _buffer {};
 
-  boost::url       _current_host {};
+  boost::url       _current_origin {};
   connection_state _connection_state { connection_state::NOT_CONNECTED };
   bool             _is_tls { false };
 };

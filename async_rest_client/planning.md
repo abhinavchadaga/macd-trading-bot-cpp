@@ -190,27 +190,37 @@ This client will live in `async_rest_client/` as an **independent static library
 
 ### Milestone 3 – Task Queue Engine
 
-1. Introduce `_tasks` deque, `_processing` flag, and `process_queue()` coroutine.
-2. Verify ordering/back-pressure by enqueueing two dummy tasks in tests.
+1. Introduce `_tasks` deque, `_is_request_in_progress` flag
+2. Implement `process_queue()` coroutine
 
 ### Milestone 4 – HTTP GET Support
 
 1. Flesh out `typed_task::run_impl` for `ReqBody = http::empty_body`.
 2. Expose `awaitable<response<string_body>> get(url, headers)`.
-3. Unit-test against `httpbin.org/get` and a mocked test stream.
 
 ### Milestone 5 – HTTP POST Support
 
 1. Extend body support to `string_body` for requests.
 2. Expose `post<RequestBody, ResponseBody>()` overload.
-3. Tests: `httpbin.org/post` echo verification.
 
 ### Milestone 6 – Host Switching & Re-connect Logic
 
 1. Detect host mismatch, perform shutdown, clear buffer, reconnect.
 2. Add tests that issue sequential requests to different hosts.
 
-### Milestone 7 – Cleanup & Documentation
+### Milestone 7 - Implement Unit Tests
+1. Test public facing API
+2. Write tests for `get()` using `httpbin.org/get`
+3. Write tests for `post()` using `httpbin.org/post`
+4. Ensure that these functions work correctly in a wide variety of contexts
+5. Ensure that queueing works
+6. Ensure that mixed host requests in queue switch connections properly
+7. Ensure that headers actually sent are what we expect
+8. Ensure that response object that we receive is exactly what we expect
+9. Test some failure scenarios to ensure that client handles failures correctly
+10. Remove current testing suite that is way too simple and implicitly tested by the above tests
+
+### Milestone 8 – Cleanup & Documentation
 
 1. Address TODOs (timeouts, retry policy stubs).
 2. Add Doxygen comments, logging calls, README updates.

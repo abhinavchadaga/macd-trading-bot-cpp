@@ -3,6 +3,7 @@
 set -e
 
 buildType=${1:-Debug}
+cmakeFlags=${2:-""}
 buildDir="build/${buildType}"
 
 if [[ ! -d ${buildDir} ]]; then
@@ -14,7 +15,7 @@ echo "CMake Configure: ${buildType}"
 echo "--------------------------------"
 echo ""
 
-cmake -S . -B "$buildDir" -GNinja -DCMAKE_BUILD_TYPE="$buildType" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake -S . -B "$buildDir" -GNinja -DCMAKE_BUILD_TYPE="$buildType" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "$cmakeFlags"
 
 echo ""
 echo "--------------------------------"

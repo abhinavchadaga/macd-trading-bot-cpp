@@ -3,7 +3,9 @@
 
 #include <boost/asio/co_spawn.hpp>
 #include <boost/asio/use_future.hpp>
+#include <boost/beast/_experimental/test/stream.hpp>
 #include <gtest/gtest.h>
+#include <string>
 
 TEST(AsyncRestClientTest, CanCreateClient)
 {
