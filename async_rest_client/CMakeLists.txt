@@ -13,7 +13,6 @@ find_package(OpenSSL REQUIRED)
 
 add_library(async_rest_client STATIC
         src/async_rest_client.cpp
-        src/typed_task.cpp
         src/utils.cpp
 )
 target_include_directories(async_rest_client PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

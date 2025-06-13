@@ -1,28 +1,16 @@
 find_package(GTest REQUIRED)
 include(GoogleTest)
 
-add_executable(TestAsyncRestClient
-        TestAsyncRestClientBasic.cpp
-        TestAsyncRestClientUtils.cpp
-)
+FILE(GLOB TEST_SRC "*.cpp")
+set(TEST_TARGETS "")
+foreach (SRC ${TEST_SRC})
+    cmake_path(GET SRC FILENAME TARGET)
+    cmake_path(REMOVE_EXTENSION TARGET)
+    add_executable(${TARGET} ${SRC})
+    target_link_libraries(${TARGET} async_rest_client GTest::gtest_main GTest::gtest)
+    gtest_discover_tests(${TARGET})
+    list(APPEND TEST_TARGETS ${TARGET})
+endforeach ()
 
-target_link_libraries(TestAsyncRestClient
-        async_rest_client
-        GTest::gtest_main
-        GTest::gtest
-)
-
-gtest_discover_tests(TestAsyncRestClient)
-
-add_executable(TestAsyncRestClientGet
-        TestAsyncRestClientGet.cpp
-)
-
-target_link_libraries(TestAsyncRestClientGet
-        async_rest_client
-        nlohmann_json::nlohmann_json
-        GTest::gtest_main
-        GTest::gtest
-)
-
-gtest_discover_tests(TestAsyncRestClientGet)
+add_custom_target(all_tests)
+add_dependencies(all_tests ${TEST_TARGETS})

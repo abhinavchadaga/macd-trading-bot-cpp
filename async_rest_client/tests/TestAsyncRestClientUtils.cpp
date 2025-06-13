@@ -60,13 +60,13 @@ TEST_F(AsyncRestClientUtilsTest, MakeHttpHttpsUrl_UrlWithoutSchemeThrows)
         {
           make_http_https_url(url_without_scheme);
         }
-      catch (const std::invalid_argument &e)
+      catch (const boost::system::system_error &e)
         {
-          EXPECT_STREQ(e.what(), "url must have scheme of http or https");
+          EXPECT_EQ(e.code(), std::errc::protocol_not_supported);
           throw;
         }
     },
-    std::invalid_argument);
+    boost::system::system_error);
 }
 
 TEST_F(AsyncRestClientUtilsTest, MakeHttpHttpsUrl_UnsupportedSchemeThrows)
@@ -79,13 +79,13 @@ TEST_F(AsyncRestClientUtilsTest, MakeHttpHttpsUrl_UnsupportedSchemeThrows)
         {
           make_http_https_url(ftp_url);
         }
-      catch (const std::invalid_argument &e)
+      catch (const boost::system::system_error &e)
         {
-          EXPECT_STREQ(e.what(), "url must have scheme of http or https");
+          EXPECT_EQ(e.code(), std::errc::protocol_not_supported);
           throw;
         }
     },
-    std::invalid_argument);
+    boost::system::system_error);
 }
 
 TEST_F(AsyncRestClientUtilsTest, MakeHttpHttpsUrl_HttpUrlWithPath)
