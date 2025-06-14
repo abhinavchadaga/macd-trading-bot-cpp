@@ -25,7 +25,12 @@ jobs:
         id: cache-boost
         uses: actions/cache@v4
         with:
-          path: /usr/local
+          path: |
+            /usr/local/lib/libboost_system*
+            /usr/local/lib/libboost_url*
+            /usr/local/include/boost/
+            /usr/local/lib/cmake/boost*
+            /usr/local/lib/cmake/Boost*
           key: boost-1.88.0-ubuntu-24.04-${{ hashFiles('.github/workflows/run_unit_tests.yml') }}
 
       - name: Install Boost 1.88
@@ -41,7 +46,9 @@ jobs:
         id: cache-talib
         uses: actions/cache@v4
         with:
-          path: /usr/local
+          path: |
+            /usr/local/lib/libta_lib*
+            /usr/local/include/ta-lib/
           key: talib-0.6.4-ubuntu-24.04-${{ hashFiles('.github/workflows/run_unit_tests.yml') }}
 
       - name: Install ta-lib from source

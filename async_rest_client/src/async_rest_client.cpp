@@ -37,8 +37,8 @@ async_rest_client::async_rest_client(net::io_context &ioc)
 
 async_rest_client::~async_rest_client()
 {
-  boost::system::error_code ec { boost::system::errc::operation_canceled,
-                                 boost::system::generic_category() };
+  const boost::system::error_code ec { boost::system::errc::operation_canceled,
+                                       boost::system::generic_category() };
 
   while (!_tasks.empty())
     {
