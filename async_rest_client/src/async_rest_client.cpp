@@ -9,7 +9,6 @@
 #include <boost/url.hpp>
 #include <cassert>
 #include <chrono>
-#include <cstdlib>
 #include <memory>
 #include <openssl/ssl.h>
 #include <string_view>
@@ -38,8 +37,28 @@ async_rest_client::async_rest_client(net::io_context &ioc)
 
 async_rest_client::~async_rest_client()
 {
-  if (_is_processing || !_tasks.empty())
-    std::abort();
+  boost::system::error_code ec { boost::system::errc::operation_canceled,
+                                 boost::system::generic_category() };
+
+  while (!_tasks.empty())
+    {
+      _tasks.front()->fail(ec);
+      _tasks.pop_front();
+    }
+
+  if (_connection_state == connection_state::CONNECTED)
+    {
+      if (_is_tls)
+        {
+          boost::system::error_code shutdown_ec;
+          _ssl_stream->shutdown(shutdown_ec); // NOLINT
+          beast::get_lowest_layer(*_ssl_stream).close();
+        }
+      else
+        {
+          _tcp_stream->close();
+        }
+    }
 }
 
 net::awaitable<boost::system::error_code>
@@ -173,7 +192,6 @@ async_rest_client::process_queue()
         _current_origin.encoded_origin() != task_endpoint.encoded_origin())
         {
           // Connected to a different host
-
           is_new_connection_required = true;
           co_await graceful_shutdown();
         }
@@ -241,7 +259,7 @@ async_rest_client::graceful_shutdown()
   else
     {
       _tcp_stream->close();
-      // TODO: do we need to reconstruct this?
+      _tcp_stream = std::make_unique<beast::tcp_stream>(_ioc);
     }
 
   _buffer->consume(_buffer->size());

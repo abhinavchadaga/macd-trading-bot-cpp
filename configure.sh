@@ -2,7 +2,7 @@
 
 set -e
 
-buildType=${1:-Debug}
+buildType=${1:-debug}
 buildDir="build/${buildType}"
 
 if [[ ! -d ${buildDir} ]]; then
