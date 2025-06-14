@@ -35,7 +35,7 @@ jobs:
           tar -xzf boost_1_88_0.tar.gz
           cd boost_1_88_0
           ./bootstrap.sh
-          sudo ./b2 install --prefix=/usr/local
+          sudo ./b2 install --prefix=/usr/local --with-system --with-url
 
       - name: Cache TA-Lib
         id: cache-talib
