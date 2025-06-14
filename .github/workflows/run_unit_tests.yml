@@ -2,13 +2,13 @@ name: Run Unit Tests
 
 on:
   pull_request:
-    branches: [master]
+    branches: [ master ]
   push:
-    branches: [master]
+    branches: [ master ]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
@@ -19,9 +19,40 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake clang build-essential libssl-dev libboost-all-dev nlohmann-json3-dev libgtest-dev ninja-build wget
+          sudo apt-get install -y cmake clang build-essential libssl-dev nlohmann-json3-dev libgtest-dev ninja-build wget
+
+      - name: Cache Boost 1.88
+        id: cache-boost
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/libboost_system*
+            /usr/local/lib/libboost_url*
+            /usr/local/include/boost/
+            /usr/local/lib/cmake/boost*
+            /usr/local/lib/cmake/Boost*
+          key: boost-1.88.0-ubuntu-24.04-${{ hashFiles('.github/workflows/run_unit_tests.yml') }}
+
+      - name: Install Boost 1.88
+        if: ${{ steps.cache-boost.outputs.cache-hit != 'true' }}
+        run: |
+          wget https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.gz
+          tar -xzf boost_1_88_0.tar.gz
+          cd boost_1_88_0
+          ./bootstrap.sh
+          sudo ./b2 install --prefix=/usr/local --with-system --with-url
+
+      - name: Cache TA-Lib
+        id: cache-talib
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/lib/libta_lib*
+            /usr/local/include/ta-lib/
+          key: talib-0.6.4-ubuntu-24.04-${{ hashFiles('.github/workflows/run_unit_tests.yml') }}
 
       - name: Install ta-lib from source
+        if: ${{ steps.cache-talib.outputs.cache-hit != 'true' }}
         run: |
           wget https://github.com/ta-lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-src.tar.gz
           tar -xzf ta-lib-0.6.4-src.tar.gz

@@ -1,0 +1,16 @@
+find_package(GTest REQUIRED)
+include(GoogleTest)
+
+FILE(GLOB TEST_SRC "*.cpp")
+set(TEST_TARGETS "")
+foreach (SRC ${TEST_SRC})
+    cmake_path(GET SRC FILENAME TARGET)
+    cmake_path(REMOVE_EXTENSION TARGET)
+    add_executable(${TARGET} ${SRC})
+    target_link_libraries(${TARGET} async_rest_client GTest::gtest_main GTest::gtest)
+    gtest_discover_tests(${TARGET})
+    list(APPEND TEST_TARGETS ${TARGET})
+endforeach ()
+
+add_custom_target(all_tests)
+add_dependencies(all_tests ${TEST_TARGETS})
