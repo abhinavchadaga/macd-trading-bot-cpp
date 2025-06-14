@@ -1,0 +1,48 @@
+{
+  "build": {
+    "dockerfile": "./Dockerfile",
+    "context": "."
+  },
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "capAdd": [
+    "SYS_PTRACE"
+  ],
+  "securityOpt": [
+    "seccomp=unconfined"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // CPP
+        "llvm-vs-code-extensions.vscode-clangd",
+        "tdennis4496.cmantic",
+        "matepek.vscode-catch2-test-adapter",
+        // CMAKE
+        "twxs.cmake",
+        "josetr.cmake-language-support-vscode",
+        "cheshirekow.cmake-format",
+        "zchrissirhcz.cmake-highlight",
+        // PYTHON
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        // BASH
+        "Remisa.shellman",
+        "foxundermoon.shell-format",
+        "timonwong.shellcheck",
+        // CSH
+        "mechatroner.rainbow-csv",
+        // YAML
+        "redhat.vscode-yaml",
+        // CONTAINER TOOLS
+        "ms-azuretools.vscode-containers"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "cmake.languageSupport.dotnetPath": "/usr/bin/dotnet"
+      }
+    }
+  },
+  "postCreateCommand": "chmod +x setup-hooks.sh && ./setup-hooks.sh"
+}
