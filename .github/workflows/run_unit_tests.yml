@@ -2,13 +2,13 @@ name: Run Unit Tests
 
 on:
   pull_request:
-    branches: [master]
+    branches: [ master ]
   push:
-    branches: [master]
+    branches: [ master ]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
       ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
@@ -19,7 +19,15 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake clang build-essential libssl-dev libboost-all-dev nlohmann-json3-dev libgtest-dev ninja-build wget
+          sudo apt-get install -y cmake clang build-essential libssl-dev nlohmann-json3-dev libgtest-dev ninja-build wget
+
+      - name: Install Boost 1.88
+        run: |
+          wget https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.gz
+          tar -xzf boost_1_88_0.tar.gz
+          cd boost_1_88_0
+          ./bootstrap.sh
+          ./b2 install --prefix=/usr/local
 
       - name: Install ta-lib from source
         run: |

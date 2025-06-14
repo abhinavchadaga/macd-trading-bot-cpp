@@ -120,14 +120,14 @@ typed_task<ReqBody, ResBody>::async_wait()
 {
   auto [ec, response] = co_await net::async_initiate<
     void(boost::system::error_code, http::response<ResBody>)>(
-    net::as_tuple(net::use_awaitable),
     [this]<typename Handler>(Handler &&handler) {
       _handler = [w = net::make_work_guard(_executor),
                   h = std::forward<Handler>(
                     handler)](auto error_code, auto response) mutable {
         std::move(h)(error_code, std::move(response));
       };
-    });
+    },
+    net::as_tuple(net::use_awaitable));
 
   co_return std::make_tuple(ec, std::move(response));
 }
