@@ -22,4 +22,4 @@ echo "Running all tests..."
 echo "--------------------------------"
 echo ""
 
-cd "build/$build_type" && ctest --output-on-failure
+cd "build/$build_type" && ctest build/"$build_type" --progress --output-on-failure
