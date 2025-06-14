@@ -21,15 +21,31 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake clang build-essential libssl-dev nlohmann-json3-dev libgtest-dev ninja-build wget
 
+      - name: Cache Boost 1.88
+        id: cache-boost
+        uses: actions/cache@v4
+        with:
+          path: /usr/local
+          key: boost-1.88.0-ubuntu-24.04-${{ hashFiles('.github/workflows/run_unit_tests.yml') }}
+
       - name: Install Boost 1.88
+        if: ${{ steps.cache-boost.outputs.cache-hit != 'true' }}
         run: |
           wget https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.gz
           tar -xzf boost_1_88_0.tar.gz
           cd boost_1_88_0
           ./bootstrap.sh
-          ./b2 install --prefix=/usr/local
+          sudo ./b2 install --prefix=/usr/local
+
+      - name: Cache TA-Lib
+        id: cache-talib
+        uses: actions/cache@v4
+        with:
+          path: /usr/local
+          key: talib-0.6.4-ubuntu-24.04-${{ hashFiles('.github/workflows/run_unit_tests.yml') }}
 
       - name: Install ta-lib from source
+        if: ${{ steps.cache-talib.outputs.cache-hit != 'true' }}
         run: |
           wget https://github.com/ta-lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-src.tar.gz
           tar -xzf ta-lib-0.6.4-src.tar.gz
