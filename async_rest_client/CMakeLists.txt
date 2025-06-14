@@ -17,7 +17,6 @@ add_library(async_rest_client STATIC
 )
 target_include_directories(async_rest_client PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(async_rest_client PUBLIC
-        logging_utils
         Boost::system
         Boost::url
         OpenSSL::SSL
