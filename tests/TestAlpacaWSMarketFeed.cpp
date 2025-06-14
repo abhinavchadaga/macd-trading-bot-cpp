@@ -1,7 +1,6 @@
 #include "AlpacaWSMarketFeed.hpp"
 #include "Bar.hpp"
 #include "HistoricalDataTestUtils.hpp"
-#include "LoggingUtils.hpp"
 
 #include <atomic>
 #include <boost/asio.hpp>
@@ -20,7 +19,6 @@ protected:
   SetUp() override
   {
     _ioc = std::make_unique<asio::io_context>();
-    CLASS_LOGGER(AlpacaWSMarketFeedTest);
   }
 
   void
@@ -57,10 +55,6 @@ TEST_F(AlpacaWSMarketFeedTest, ConnectsToFAKEPACAStream)
     latest_bar   = b;
     received_bar = true;
     ++bar_count;
-    LOG_INFO(AlpacaWSMarketFeedTest, ConnectsToFAKEPACAStream)
-      << "Received bar for " << b.symbol() << " - O: " << b.open()
-      << " H: " << b.high() << " L: " << b.low() << " C: " << b.close()
-      << " V: " << b.volume();
   });
 
   feed.start();
@@ -122,9 +116,6 @@ TEST_F(AlpacaWSMarketFeedTest, HistoricalDataFeedTest)
        << ", close: " << b.close() << ", volume: " << b.volume() << "}";
 
     bar_strings.push_back(ss.str());
-
-    LOG_INFO(AlpacaWSMarketFeedTest, HistoricalDataFeedTest)
-      << "Bar " << received_bars.load() << ": " << ss.str();
 
     if (received_bars.load() >= 10)
       {

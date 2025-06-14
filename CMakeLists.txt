@@ -10,10 +10,7 @@ find_package(nlohmann_json REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 
 include_directories(include)
-include_directories(third-party)
-
 add_subdirectory(src)
-add_subdirectory(third-party)
 add_subdirectory(async_rest_client)
 
 enable_testing()

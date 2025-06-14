@@ -2,7 +2,6 @@
 #include "Bar.hpp"
 #include "BarAggregator.hpp"
 #include "HistoricalDataTestUtils.hpp"
-#include "LoggingUtils.hpp"
 
 #include <atomic>
 #include <boost/asio.hpp>
@@ -20,7 +19,6 @@ protected:
   SetUp() override
   {
     _ioc = std::make_unique<asio::io_context>();
-    CLASS_LOGGER(BarAggregatorIntegrationTest);
   }
 
   void

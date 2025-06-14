@@ -2,7 +2,6 @@
 #include "Bar.hpp"
 #include "IndicatorConfig.hpp"
 #include "IndicatorRegistry.hpp"
-#include "LoggingUtils.hpp"
 #include "indicators/ohlcv/OHLCVIndicator.hpp"
 
 #include <boost/signals2.hpp>
@@ -53,15 +52,11 @@ template <
 IndicatorEngine<Count, TimeUnit, IndicatorInterface>::IndicatorEngine(
   const std::vector<IndicatorConfig> &configs)
 {
-  configure_logging();
-  CLASS_LOGGER(IndicatorEngine);
 
   for (const auto &config : configs)
     {
       auto [name_sv, indicator] { RegistryType::create(config) };
       const std::string name { name_sv };
-      LOG_INFO(IndicatorEngine, IndicatorEngine)
-        << "registered " + name << " indicator!";
       _indicators[name] = std::move(indicator);
       _snapshots[name]  = std::move(typename IndicatorInterface::Snapshot {});
     }
