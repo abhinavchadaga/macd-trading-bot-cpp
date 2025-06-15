@@ -21,6 +21,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake clang build-essential libssl-dev nlohmann-json3-dev libgtest-dev ninja-build wget libspdlog-dev
 
+      - name: Fix permissions before Boost cache
+        run: |
+          sudo mkdir -p /usr/local/lib /usr/local/include /usr/local/lib/cmake
+          sudo chown -R $USER:$USER /usr/local/lib /usr/local/include /usr/local/lib/cmake
+
       - name: Cache Boost 1.88
         id: cache-boost
         uses: actions/cache@v4
@@ -41,6 +46,11 @@ jobs:
           cd boost_1_88_0
           ./bootstrap.sh
           sudo ./b2 install --prefix=/usr/local --with-system --with-url
+
+      - name: Fix permissions before TA-Lib cache
+        run: |
+          sudo mkdir -p /usr/local/lib /usr/local/include
+          sudo chown -R $USER:$USER /usr/local/lib /usr/local/include
 
       - name: Cache TA-Lib
         id: cache-talib
