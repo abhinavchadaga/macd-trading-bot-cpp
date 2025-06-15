@@ -57,7 +57,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            /usr/local/lib/libta_lib*
+            /usr/local/lib/libta-lib*
             /usr/local/include/ta-lib/
             /usr/local/lib/pkgconfig/ta-lib.pc
           key: talib-0.6.4-ubuntu-24.04-${{ hashFiles('.github/workflows/run_unit_tests.yml') }}
