@@ -84,13 +84,13 @@ private:
 //
 // Template Implementations
 
-
 template <typename ResponseBody>
   requires SupportedResponseBody<ResponseBody>
 net::awaitable<
   std::tuple<boost::system::error_code, http::response<ResponseBody>>>
 async_rest_client::get(std::string_view url, http::fields headers)
 {
+  LOG_INFO("making GET request to {}", url);
   auto task { std::make_unique<typed_task<http::empty_body, ResponseBody>>(
     _ioc.get_executor(),
     url,
@@ -101,7 +101,7 @@ async_rest_client::get(std::string_view url, http::fields headers)
   typed_task<http::empty_body, ResponseBody> *task_ptr { task.get() };
   enqueue_task(std::move(task));
 
-  auto [ec, response] = co_await task_ptr->async_wait();
+  auto [ec, response] { co_await task_ptr->async_wait() };
   co_return std::make_tuple(ec, std::move(response));
 }
 

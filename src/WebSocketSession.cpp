@@ -1,7 +1,5 @@
 #include "WebSocketSession.hpp"
 
-#include "LoggingUtils.hpp"
-
 #include <thread>
 
 std::shared_ptr<WebSocketSession>
@@ -25,8 +23,6 @@ WebSocketSession::WebSocketSession(
   , _connected { false }
   , _should_reconnect { true }
 {
-  CLASS_LOGGER(WebSocketSession);
-  configure_logging();
 }
 
 void
@@ -71,8 +67,6 @@ WebSocketSession::send(const std::string_view text)
 void
 WebSocketSession::fail(const beast::error_code &ec, char const *what)
 {
-  LOG_ERROR(WebSocketSession, fail)
-    << what << ": " << ec.message() << std::endl;
   _connected = false;
   if (_should_reconnect)
     {
@@ -201,7 +195,7 @@ WebSocketSession::on_handshake(const beast::error_code &ec)
 
 void
 WebSocketSession::do_read()
-{                                // NOLINT (misc-no-recursion)
+{ // NOLINT (misc-no-recursion)
   _ws.async_read(
     _buffer,
     [self = shared_from_this()]( // NOLINT (misc-no-recursion)

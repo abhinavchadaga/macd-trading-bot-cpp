@@ -2,6 +2,8 @@
 
 #include "base_task.hpp"
 #include "concepts.hpp"
+#include "formatter.hpp"
+#include "my_logger.hpp"
 #include "utils.hpp"
 
 #include <boost/asio/any_completion_handler.hpp>
@@ -123,8 +125,8 @@ typed_task<ReqBody, ResBody>::async_wait()
     [this]<typename Handler>(Handler &&handler) {
       _handler = [w = net::make_work_guard(_executor),
                   h = std::forward<Handler>(
-                    handler)](auto error_code, auto response) mutable {
-        std::move(h)(error_code, std::move(response));
+                    handler)](auto error_code, auto res) mutable {
+        std::move(h)(error_code, std::move(res));
       };
     },
     net::as_tuple(net::use_awaitable));
@@ -165,6 +167,9 @@ typed_task<ReqBody, ResBody>::run_impl(
       req.body() = std::move(_request_payload);
       req.prepare_payload();
 
+      LOG_INFO("sending request to {}", _endpoint.encoded_host());
+      LOG_TRACE("request: {}", req);
+
       co_await http::async_write(stream, req, net::use_awaitable);
 
       http::response<ResBody> res {};
@@ -172,18 +177,19 @@ typed_task<ReqBody, ResBody>::run_impl(
       buffer.consume(buffer.size());
 
       assert(_handler && "Handler must be set before run_impl is called");
+      LOG_TRACE("response: {}", res);
       std::move(_handler)(boost::system::error_code {}, std::move(res));
       co_return true;
     }
   catch (const boost::system::system_error &e)
     {
-      // TODO: log run error here
+      LOG_ERROR("{}: {}", e.code().message(), e.what());
       std::move(_handler)(e.code(), http::response<ResBody> {});
       co_return false;
     }
-  catch (const std::exception &)
+  catch (const std::exception &e)
     {
-      // TODO: log run error here
+      LOG_ERROR("{}", e.what());
       boost::system::error_code ec { boost::system::errc::io_error,
                                      boost::system::generic_category() };
       std::move(_handler)(ec, http::response<ResBody> {});
