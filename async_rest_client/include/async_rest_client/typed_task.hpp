@@ -2,6 +2,8 @@
 
 #include "base_task.hpp"
 #include "concepts.hpp"
+#include "my_logger.hpp"
+#include "request_formatter.hpp"
 #include "utils.hpp"
 
 #include <boost/asio/any_completion_handler.hpp>
@@ -164,6 +166,9 @@ typed_task<ReqBody, ResBody>::run_impl(
 
       req.body() = std::move(_request_payload);
       req.prepare_payload();
+
+      LOG_INFO("sending request to {}", _endpoint.encoded_host());
+      LOG_TRACE("request: {}", req);
 
       co_await http::async_write(stream, req, net::use_awaitable);
 

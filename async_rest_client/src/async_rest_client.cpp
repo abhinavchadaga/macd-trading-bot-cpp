@@ -3,6 +3,7 @@
 #include "async_rest_client/connection_context.hpp"
 #include "async_rest_client/typed_task.hpp"
 #include "async_rest_client/utils.hpp"
+#include "my_logger.hpp"
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/use_awaitable.hpp>
@@ -64,15 +65,19 @@ async_rest_client::~async_rest_client()
 net::awaitable<boost::system::error_code>
 async_rest_client::connect(std::string_view url_sv)
 {
+  LOG_INFO("connecting to {}", url_sv);
   if (_connection_state == connection_state::CONNECTING)
-    co_return boost::system::error_code {
-      boost::system::errc::operation_in_progress,
-      boost::system::generic_category()
-    };
+    {
+      LOG_WARN("calling connect() while already in connecting state");
+      co_return boost::system::error_code {
+        boost::system::errc::operation_in_progress,
+        boost::system::generic_category()
+      };
+    }
 
   _connection_state = connection_state::CONNECTING;
 
-  boost::url url;
+  boost::url url {};
   try
     {
       url = make_http_https_url(url_sv);
@@ -91,6 +96,7 @@ async_rest_client::connect(std::string_view url_sv)
       _ssl_stream->native_handle(),
       url.host().c_str()))
     {
+      LOG_ERROR("SSL_set_tlsext_host_name failed");
       boost::system::error_code ec { static_cast<int>(ERR_get_error()),
                                      net::error::get_ssl_category() };
       _connection_state = connection_state::NOT_CONNECTED;
@@ -106,6 +112,7 @@ async_rest_client::connect(std::string_view url_sv)
 
   if (resolve_ec)
     {
+      LOG_ERROR("async_resolve() failed");
       _connection_state = connection_state::NOT_CONNECTED;
       co_return resolve_ec;
     }
@@ -120,6 +127,7 @@ async_rest_client::connect(std::string_view url_sv)
 
       if (connect_ec)
         {
+          LOG_ERROR("async_connect() failed");
           _connection_state = connection_state::NOT_CONNECTED;
           co_return connect_ec;
         }
@@ -132,6 +140,7 @@ async_rest_client::connect(std::string_view url_sv)
 
       if (handshake_ec)
         {
+          LOG_ERROR("async_handshake() failed");
           _connection_state = connection_state::NOT_CONNECTED;
           co_return handshake_ec;
         }
@@ -145,6 +154,7 @@ async_rest_client::connect(std::string_view url_sv)
 
       if (connect_ec)
         {
+          LOG_ERROR("async_connect() failed");
           _connection_state = connection_state::NOT_CONNECTED;
           co_return connect_ec;
         }
@@ -152,6 +162,7 @@ async_rest_client::connect(std::string_view url_sv)
 
   _connection_state = connection_state::CONNECTED;
   _current_origin   = std::move(url);
+  LOG_INFO("successfully connected to {}", url_sv);
   co_return make_error_code(boost::system::errc::success);
 }
 
@@ -173,6 +184,8 @@ async_rest_client::process_queue()
     !_is_processing && "process_queue is being launched more than one time");
 
   _is_processing = true;
+
+  LOG_INFO("starting request task queue processing");
 
   while (!_tasks.empty())
     {
@@ -198,12 +211,22 @@ async_rest_client::process_queue()
 
       if (is_new_connection_required)
         {
-          const std::string_view connection_url {
-            task_endpoint.encoded_origin()
-          };
-          if (const auto connect_ec = co_await connect(connection_url))
+
+          const std::string_view new_origin { task_endpoint.encoded_origin() };
+
+          LOG_INFO(
+            "changing connect host from {} -> {}",
+            _current_origin.host(),
+            new_origin);
+
+          if (const auto connect_ec = co_await connect(new_origin))
             {
-              // TODO: log connection error here
+
+              LOG_ERROR(
+                "failed to change connection from {} -> {}",
+                _current_origin.host(),
+                new_origin);
+
               current_task->fail(connect_ec);
               _tasks.pop_front();
               continue;

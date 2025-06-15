@@ -1,4 +1,5 @@
 #include "async_rest_client/async_rest_client.hpp"
+#include "my_logger.hpp"
 
 #include <boost/asio/co_spawn.hpp>
 #include <boost/asio/use_future.hpp>
@@ -9,6 +10,12 @@
 class AsyncRestClientGetTest : public ::testing::Test
 {
 protected:
+
+  static void
+  SetUpTestCase()
+  {
+    init_logger("async_rest_client");
+  }
 
   void
   SetUp() override

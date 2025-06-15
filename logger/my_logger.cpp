@@ -115,12 +115,19 @@ make_logger(std::string_view name)
     }
 
   std::vector<spdlog::sink_ptr> sinks;
-  sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_st>());
-  sinks.push_back(
-    std::make_shared<spdlog::sinks::daily_file_sink_st>(
-      std::format("logs/{}/{}.logfile", name, name),
-      23,
-      59));
+
+  // Stdout sink - log debug and up
+  auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
+  stdout_sink->set_level(spdlog::level::debug);
+  sinks.push_back(stdout_sink);
+
+  // File sink - log trace and up (everything)
+  auto file_sink = std::make_shared<spdlog::sinks::daily_file_sink_st>(
+    std::format("logs/{}/{}.logfile", name, name),
+    23,
+    59);
+  file_sink->set_level(spdlog::level::trace);
+  sinks.push_back(file_sink);
 
   auto logger { std::make_shared<spdlog::async_logger>(
     std::string { name },
