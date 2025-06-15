@@ -84,6 +84,7 @@ async_rest_client::connect(std::string_view url_sv)
     }
   catch (const boost::system::system_error &e)
     {
+      LOG_ERROR("{}", e.what());
       _connection_state = connection_state::NOT_CONNECTED;
       co_return e.code();
     }
@@ -170,9 +171,12 @@ void
 async_rest_client::enqueue_task(std::unique_ptr<base_task> &&task)
 {
   _tasks.push_back(std::move(task));
+  LOG_TRACE("enqueued task {}", _tasks.front()->endpoint().c_str());
+  LOG_TRACE("{} tasks in queue", _tasks.size());
 
   if (!_is_processing)
     {
+      LOG_TRACE("spawning process_queue() coroutine...");
       net::co_spawn(_ioc, process_queue(), net::detached);
     }
 }
@@ -185,7 +189,7 @@ async_rest_client::process_queue()
 
   _is_processing = true;
 
-  LOG_INFO("starting request task queue processing");
+  LOG_TRACE("starting request task queue processing");
 
   while (!_tasks.empty())
     {
@@ -215,7 +219,7 @@ async_rest_client::process_queue()
           const std::string_view new_origin { task_endpoint.encoded_origin() };
 
           LOG_INFO(
-            "changing connect host from {} -> {}",
+            "changing connected host from {} -> {}",
             _current_origin.host(),
             new_origin);
 
@@ -247,6 +251,8 @@ async_rest_client::process_queue()
       _tasks.pop_front();
     }
 
+  LOG_TRACE("done processing all request tasks");
+
   _is_processing = false;
 
   co_return;
@@ -257,7 +263,7 @@ async_rest_client::graceful_shutdown()
 {
   if (_connection_state != connection_state::CONNECTED)
     {
-      // TODO: Log warning here
+      LOG_WARN("calling graceful_shutdown() when not connected");
       co_return;
     }
 
