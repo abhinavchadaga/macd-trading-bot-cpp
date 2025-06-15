@@ -47,20 +47,20 @@ jobs:
           ./bootstrap.sh
           sudo ./b2 install --prefix=/usr/local --with-system --with-url
 
-      - name: Fix permissions before TA-Lib cache
-        run: |
-          sudo mkdir -p /usr/local/lib /usr/local/include /usr/local/lib/pkgconfig
-          sudo chown -R $USER:$USER /usr/local/lib /usr/local/include
+      # - name: Fix permissions before TA-Lib cache
+      #   run: |
+      #     sudo mkdir -p /usr/local/lib /usr/local/include /usr/local/lib/pkgconfig
+      #     sudo chown -R $USER:$USER /usr/local/lib /usr/local/include
 
-      - name: Cache TA-Lib
-        id: cache-talib
-        uses: actions/cache@v4
-        with:
-          path: |
-            /usr/local/lib/libta_lib*
-            /usr/local/include/ta-lib/
-            /usr/local/lib/pkgconfig/ta-lib.pc
-          key: talib-0.6.4-ubuntu-24.04-${{ hashFiles('.github/workflows/run_unit_tests.yml') }}
+      # - name: Cache TA-Lib
+      #   id: cache-talib
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: |
+      #       /usr/local/lib/libta_lib*
+      #       /usr/local/include/ta-lib/
+      #       /usr/local/lib/pkgconfig/ta-lib.pc
+      #     key: talib-0.6.4-ubuntu-24.04-${{ hashFiles('.github/workflows/run_unit_tests.yml') }}
 
       - name: Install ta-lib from source
         if: ${{ steps.cache-talib.outputs.cache-hit != 'true' }}
