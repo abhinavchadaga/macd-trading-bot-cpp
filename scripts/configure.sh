@@ -56,7 +56,8 @@ mkdir -p "${buildDir}"
 log_info "Running CMake configuration..."
 if [[ -n $additionalFlags ]]; then
 	log_info "Additional CMake flags: ${additionalFlags}"
-	cmake -S . -B "$buildDir" -GNinja -DCMAKE_BUILD_TYPE="$buildType" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "$additionalFlags"
+	# shellcheck disable=SC2086 # We want word splitting here to separate multiple flags
+	cmake -S . -B "$buildDir" -GNinja -DCMAKE_BUILD_TYPE="$buildType" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $additionalFlags
 else
 	cmake -S . -B "$buildDir" -GNinja -DCMAKE_BUILD_TYPE="$buildType" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 fi

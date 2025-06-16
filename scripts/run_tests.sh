@@ -9,16 +9,6 @@ source "$SCRIPT_DIR/logging.sh"
 
 cd "$PROJECT_ROOT"
 
-get_parallel_jobs() {
-	if command -v nproc >/dev/null 2>&1; then
-		nproc
-	elif [[ -r /proc/cpuinfo ]]; then
-		grep -c ^processor /proc/cpuinfo
-	else
-		echo "4" # fallback
-	fi
-}
-
 build_project() {
 	local build_type="$1"
 	local configure_flags="$2"
@@ -80,10 +70,8 @@ list_available_tests() {
 run_tests() {
 	local build_dir="$1"
 	local test_pattern="$2"
-	local parallel_jobs="$3"
-	local verbose="$4"
+	local verbose="$3"
 
-	# Assume build directory exists - caller is responsible for ensuring this
 	if [[ ! -d $build_dir ]]; then
 		log_error "Build directory does not exist: $build_dir"
 		log_error "This is an internal error - build should have been completed before calling run_tests"
@@ -92,7 +80,6 @@ run_tests() {
 
 	cd "$build_dir"
 
-	# Build ctest command
 	local ctest_args=("--progress" "--output-on-failure")
 
 	if [[ -n $test_pattern ]]; then
@@ -106,11 +93,7 @@ run_tests() {
 		ctest_args+=("-V")
 	fi
 
-	if [[ -n $parallel_jobs && $parallel_jobs -gt 1 ]]; then
-		ctest_args+=("-j" "$parallel_jobs")
-		log_info "Running tests with $parallel_jobs parallel jobs"
-	fi
-
+	log_info "Running tests"
 	log_info "Executing: ctest ${ctest_args[*]}"
 	echo
 
@@ -124,16 +107,13 @@ run_tests() {
 	fi
 }
 
-# Default values
 buildType="debug"
 testPattern=""
 installUtils=false
 utilsPrefix=""
-parallelJobs=""
 verbose=false
 listTests=false
 
-# Parameters to pass to intermediate scripts
 configureFlags=""
 
 while [[ $# -gt 0 ]]; do
@@ -158,10 +138,6 @@ while [[ $# -gt 0 ]]; do
 		utilsPrefix="$2"
 		shift 2
 		;;
-	--parallel | -j)
-		parallelJobs="$2"
-		shift 2
-		;;
 	--verbose | -v)
 		verbose=true
 		shift
@@ -184,7 +160,6 @@ while [[ $# -gt 0 ]]; do
 		echo "  --install-utils             Install test-utils"
 		echo "  --no-install-utils          Skip test-utils installation [default]"
 		echo "  -p, --prefix                Test-utils installation prefix [smart default]"
-		echo "  -j, --parallel              Number of parallel test jobs [default: auto-detect]"
 		echo "  -v, --verbose               Verbose test output"
 		echo "  --configure-flags           Additional CMake flags for configure script"
 		echo "  -h, --help                  Show this help message"
@@ -195,7 +170,7 @@ while [[ $# -gt 0 ]]; do
 		echo "  $0 --test TestIndicators       # Run tests matching 'TestIndicators'"
 		echo "  $0 --test \"Test.*Utils\"        # Run tests matching regex pattern"
 		echo "  $0 --list-tests                # Show available tests"
-		echo "  $0 --no-install-utils -j 4     # Skip utils, run with 4 parallel jobs"
+		echo "  $0 --no-install-utils -v        # Skip utils, run with verbose output"
 		echo "  $0 --configure-flags \"-DCUSTOM_FLAG=ON\"  # Pass custom CMake flags"
 		exit 0
 		;;
@@ -209,14 +184,9 @@ done
 
 buildDir="build/${buildType}"
 
-# Handle list-tests option
 if [[ $listTests == true ]]; then
 	list_available_tests "$buildDir" "$buildType" "$configureFlags"
 	exit 0
-fi
-
-if [[ -z $parallelJobs ]]; then
-	parallelJobs=$(get_parallel_jobs)
 fi
 
 log_header "Test Execution Setup"
@@ -227,7 +197,6 @@ if [[ -n $testPattern ]]; then
 else
 	log_info "Running all tests"
 fi
-log_info "Parallel jobs: $parallelJobs"
 log_info "Install test-utils: $installUtils"
 if [[ $verbose == true ]]; then
 	log_info "Verbose output: enabled"
@@ -246,7 +215,6 @@ else
 	log_info "Skipping test-utils installation"
 fi
 
-# Ensure build directory exists
 if [[ ! -d $buildDir ]]; then
 	log_header "Building Project"
 	log_info "Build directory does not exist, building with all tests enabled"
@@ -258,7 +226,6 @@ else
 	log_info "Build directory exists: $buildDir"
 fi
 
-# Run tests
-run_tests "$buildDir" "$testPattern" "$parallelJobs" "$verbose"
+run_tests "$buildDir" "$testPattern" "$verbose"
 
 log_success "Test execution complete!"
