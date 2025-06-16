@@ -7,21 +7,56 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Configuration and Building
 
 ```bash
-# Configure project (default: Debug)
-./configure.sh [Debug|Release]
+# Configure project (default: debug)
+./scripts/configure.sh [options]
+  --build-type <type>    : Build type (debug|release, default: debug)
+  --cmake-flags <flags>  : Additional CMake flags to pass
+  --help                 : Show help message
 
-# Configure and Build project (default: Debug, all targets)
-./build.sh [Debug|Release] [target]
+# Examples:
+./scripts/configure.sh --build-type release
+./scripts/configure.sh --cmake-flags "-DCMAKE_VERBOSE_MAKEFILE=ON"
+
+# Build project (default: Debug, all targets)
+./scripts/build.sh [options]
+  --build-type <type>    : Build type (Debug|Release, default: Debug)
+  --target <target>      : Specific target to build (default: all)
+  --cmake-flags <flags>  : Additional CMake flags to pass
+  --skip-configure       : Skip CMake configuration step
+  --list-targets         : List all available build targets
+  --help                 : Show help message
+
+# Examples:
+./scripts/build.sh --target macd-trading-bot
+./scripts/build.sh --build-type Release --target TestIndicators
+./scripts/build.sh --list-targets
+./scripts/build.sh --skip-configure  # Use after configure.sh
 ```
 
 ### Testing
 ```bash
-# Run all tests (builds dependencies and runs ctest)
-./run_tests.sh [Release] [/usr/local/bin]
+# Run tests (default: debug build type)
+./scripts/run_tests.sh [options]
+  --build-type <type>       : Build type (debug|release, default: debug)
+  --test <pattern>          : Run only tests matching regex pattern
+  --list-tests              : List all available tests
+  --install-utils           : Force install test utilities
+  --no-install-utils        : Skip test utility installation
+  --prefix <path>           : Installation prefix for utilities
+  --verbose                 : Enable verbose output
+  --configure-flags <flags> : Additional CMake flags for configure
+  --help                    : Show help message
 
-# Run individual test executables (after building)
-cd build/Debug && ./TestIndicators
-cd build/Debug && ./TestBarAggregatorIntegration
+# Examples:
+./scripts/run_tests.sh --list-tests
+./scripts/run_tests.sh --test "TestIndicators"
+./scripts/run_tests.sh --build-type release --verbose
+./scripts/run_tests.sh --prefix ~/bin --install-utils
+
+# Install test utilities separately
+./scripts/install-test-utils.sh [prefix]
+  # Default prefix: /usr/local/bin (or ~/bin if no sudo access)
+  # Installs Python tools as binaries using PyInstaller
 ```
 
 ### Other Development Tools
@@ -32,13 +67,14 @@ cd build/Debug && ./TestBarAggregatorIntegration
 # Start WebSocket echo server for testing
 ./test-utils/start_websocat_echo.sh
 
-# Install Python test utilities
-./test-utils/install.sh
+# Python test utilities (run directly from test-utils/)
+python test-utils/historical_alpaca_ws_endpoint.py  # Historical WebSocket endpoint
+python test-utils/historical_bars_to_csv.py         # Convert bars to CSV
 ```
 
 ## Architecture Overview
 
-This is a C++20 MACD trading bot implementing a **Reactor pattern** with single-threaded, event-driven architecture. The bot follows OOD principles and uses modern C++20 features including concepts, ranges, and coroutines.
+This is a C++20 MACD trading bot implementing a **Proactor pattern** with single-threaded, event-driven architecture. The bot follows OOD principles and uses modern C++20 features including concepts, ranges, and coroutines.
 
 ### Core Components
 
