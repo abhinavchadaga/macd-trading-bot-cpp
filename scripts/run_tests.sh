@@ -215,16 +215,12 @@ else
 	log_info "Skipping test-utils installation"
 fi
 
-if [[ ! -d $buildDir ]]; then
-	log_header "Building Project"
-	log_info "Build directory does not exist, building with all tests enabled"
-	if [[ -n $configureFlags ]]; then
-		log_info "Using custom CMake flags: $configureFlags"
-	fi
-	build_project "$buildType" "$configureFlags"
-else
-	log_info "Build directory exists: $buildDir"
+log_header "Building Project"
+log_info "Building project with all tests enabled"
+if [[ -n $configureFlags ]]; then
+	log_info "Using custom CMake flags: $configureFlags"
 fi
+build_project "$buildType" "$configureFlags"
 
 run_tests "$buildDir" "$testPattern" "$verbose"
 
