@@ -1,4 +1,5 @@
 #include "async_rest_client/utils.hpp"
+#include "my_logger.hpp"
 
 #include <gtest/gtest.h>
 #include <stdexcept>
