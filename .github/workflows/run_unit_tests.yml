@@ -73,4 +73,4 @@ jobs:
           sudo make install
 
       - name: Build and run unit tests
-        run: ./run_tests.sh Release
+        run: ./scripts/run_tests.sh -t Release --install-utils
