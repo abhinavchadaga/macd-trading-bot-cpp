@@ -39,7 +39,17 @@ public:
     template<typename RequestBody, typename ResponseBody>
         requires SupportedRequestBody<RequestBody> && SupportedResponseBody<ResponseBody>
     net::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody>>>
-        post(const std::string& url, const http::fields& headers, typename RequestBody::value_type body);
+        post(std::string_view url, http::fields headers, typename RequestBody::value_type body);
+
+    template<typename ResponseBody>
+        requires SupportedResponseBody<ResponseBody>
+    net::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody>>>
+        delete_(std::string_view url, http::fields headers = {});
+
+    template<typename RequestBody, typename ResponseBody>
+        requires SupportedRequestBody<RequestBody> && SupportedResponseBody<ResponseBody>
+    net::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody>>>
+        patch(std::string_view url, http::fields headers, typename RequestBody::value_type body);
 
 private:
     enum class connection_state
@@ -94,10 +104,42 @@ net::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody
 template<typename RequestBody, typename ResponseBody>
     requires SupportedRequestBody<RequestBody> && SupportedResponseBody<ResponseBody>
 boost::asio::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody>>>
-    async_rest_client::post(const std::string& url, const http::fields& headers, typename RequestBody::value_type body)
+    async_rest_client::post(std::string_view url, http::fields headers, typename RequestBody::value_type body)
 {
     auto task = std::make_unique<typed_task<RequestBody, ResponseBody>>(
         _ioc.get_executor(), url, http::verb::post, headers, std::move(body));
+
+    typed_task<RequestBody, ResponseBody>* task_ptr{task.get()};
+    enqueue_task(std::move(task));
+
+    auto [ec, response] = co_await task_ptr->async_wait();
+    co_return std::make_tuple(ec, std::move(response));
+}
+
+template<typename ResponseBody>
+    requires SupportedResponseBody<ResponseBody>
+boost::asio::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody>>>
+    async_rest_client::delete_(std::string_view url, http::fields headers)
+{
+    LOG_INFO("making DELETE request to {}", url);
+    auto task{std::make_unique<typed_task<http::empty_body, ResponseBody>>(
+        _ioc.get_executor(), url, http::verb::delete_, headers, http::empty_body::value_type{})};
+
+    typed_task<http::empty_body, ResponseBody>* task_ptr{task.get()};
+    enqueue_task(std::move(task));
+
+    auto [ec, response]{co_await task_ptr->async_wait()};
+    co_return std::make_tuple(ec, std::move(response));
+}
+
+template<typename RequestBody, typename ResponseBody>
+    requires SupportedRequestBody<RequestBody> && SupportedResponseBody<ResponseBody>
+boost::asio::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody>>>
+    async_rest_client::patch(std::string_view url, http::fields headers, typename RequestBody::value_type body)
+{
+    LOG_INFO("making PATCH request to {}", url);
+    auto task = std::make_unique<typed_task<RequestBody, ResponseBody>>(
+        _ioc.get_executor(), url, http::verb::patch, headers, std::move(body));
 
     typed_task<RequestBody, ResponseBody>* task_ptr{task.get()};
     enqueue_task(std::move(task));
