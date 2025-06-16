@@ -15,12 +15,6 @@ class AsyncRestClientGetTest : public ::testing::Test
 {
 protected:
 
-  static void
-  SetUpTestCase()
-  {
-    init_logger("async_rest_client");
-  }
-
   void
   SetUp() override
   {
