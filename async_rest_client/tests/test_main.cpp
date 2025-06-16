@@ -2,11 +2,10 @@
 
 #include <gtest/gtest.h>
 
-int
-main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-  init_logger("async_rest_client_tests");
+    init_logger("async_rest_client_tests");
 
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

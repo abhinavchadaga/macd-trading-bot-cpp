@@ -17,287 +17,250 @@
 namespace async_rest_client
 {
 
-std::shared_ptr<async_rest_client>
-async_rest_client::create(net::io_context &ioc)
+std::shared_ptr<async_rest_client> async_rest_client::create(net::io_context& ioc)
 {
-  return std::shared_ptr<async_rest_client> { new async_rest_client { ioc } };
+    return std::shared_ptr<async_rest_client>{new async_rest_client{ioc}};
 }
 
-async_rest_client::async_rest_client(net::io_context &ioc)
-  : _ioc { ioc }
-  , _ssl_ctx { ssl::context::tlsv12_client }
-  , _tcp_stream { std::make_unique<beast::tcp_stream>(_ioc) }
-  , _ssl_stream { std::make_unique<beast::ssl_stream<beast::tcp_stream>>(
-      _ioc,
-      _ssl_ctx) }
-  , _buffer { std::make_unique<beast::flat_buffer>() }
+async_rest_client::async_rest_client(net::io_context& ioc)
+    : _ioc{ioc},
+      _ssl_ctx{ssl::context::tlsv12_client},
+      _tcp_stream{std::make_unique<beast::tcp_stream>(_ioc)},
+      _ssl_stream{std::make_unique<beast::ssl_stream<beast::tcp_stream>>(_ioc, _ssl_ctx)},
+      _buffer{std::make_unique<beast::flat_buffer>()}
 {
-  _ssl_ctx.set_default_verify_paths();
-  _ssl_ctx.set_verify_mode(ssl::verify_peer);
+    _ssl_ctx.set_default_verify_paths();
+    _ssl_ctx.set_verify_mode(ssl::verify_peer);
 }
 
 async_rest_client::~async_rest_client()
 {
-  const boost::system::error_code ec { boost::system::errc::operation_canceled,
-                                       boost::system::generic_category() };
+    const boost::system::error_code ec{boost::system::errc::operation_canceled, boost::system::generic_category()};
 
-  while (!_tasks.empty())
+    while (!_tasks.empty())
     {
-      _tasks.front()->fail(ec);
-      _tasks.pop_front();
+        _tasks.front()->fail(ec);
+        _tasks.pop_front();
     }
 
-  if (_connection_state == connection_state::CONNECTED)
+    if (_connection_state == connection_state::CONNECTED)
     {
-      if (_is_tls)
+        if (_is_tls)
         {
-          boost::system::error_code shutdown_ec;
-          _ssl_stream->shutdown(shutdown_ec); // NOLINT
-          beast::get_lowest_layer(*_ssl_stream).close();
+            boost::system::error_code shutdown_ec;
+            _ssl_stream->shutdown(shutdown_ec); // NOLINT
+            beast::get_lowest_layer(*_ssl_stream).close();
         }
-      else
+        else
         {
-          _tcp_stream->close();
+            _tcp_stream->close();
         }
     }
 }
 
-net::awaitable<boost::system::error_code>
-async_rest_client::connect(std::string_view url_sv)
+net::awaitable<boost::system::error_code> async_rest_client::connect(std::string_view url_sv)
 {
-  LOG_INFO("connecting to {}", url_sv);
-  if (_connection_state == connection_state::CONNECTING)
+    LOG_INFO("connecting to {}", url_sv);
+    if (_connection_state == connection_state::CONNECTING)
     {
-      LOG_WARN("calling connect() while already in connecting state");
-      co_return boost::system::error_code {
-        boost::system::errc::operation_in_progress,
-        boost::system::generic_category()
-      };
+        LOG_WARN("calling connect() while already in connecting state");
+        co_return boost::system::error_code{
+            boost::system::errc::operation_in_progress, boost::system::generic_category()};
     }
 
-  _connection_state = connection_state::CONNECTING;
+    _connection_state = connection_state::CONNECTING;
 
-  boost::url url {};
-  try
+    boost::url url{};
+    try
     {
-      url = make_http_https_url(url_sv);
+        url = make_http_https_url(url_sv);
     }
-  catch (const boost::system::system_error &e)
+    catch (const boost::system::system_error& e)
     {
-      LOG_ERROR("{}", e.what());
-      _connection_state = connection_state::NOT_CONNECTED;
-      co_return e.code();
-    }
-
-  _is_tls = url.scheme() == "https";
-
-  if (
-    _is_tls
-    && !SSL_set_tlsext_host_name(
-      _ssl_stream->native_handle(),
-      url.host().c_str()))
-    {
-      LOG_ERROR("SSL_set_tlsext_host_name failed");
-      boost::system::error_code ec { static_cast<int>(ERR_get_error()),
-                                     net::error::get_ssl_category() };
-      _connection_state = connection_state::NOT_CONNECTED;
-      co_return ec;
+        LOG_ERROR("{}", e.what());
+        _connection_state = connection_state::NOT_CONNECTED;
+        co_return e.code();
     }
 
-  tcp::resolver resolver { _ioc };
-  auto [resolve_ec, endpoints] { co_await resolver.async_resolve(
-    url.host(),
-    url.port(),
-    net::as_tuple(net::use_awaitable)) };
+    _is_tls = url.scheme() == "https";
 
-
-  if (resolve_ec)
+    if (_is_tls && !SSL_set_tlsext_host_name(_ssl_stream->native_handle(), url.host().c_str()))
     {
-      LOG_ERROR("async_resolve() failed");
-      _connection_state = connection_state::NOT_CONNECTED;
-      co_return resolve_ec;
+        LOG_ERROR("SSL_set_tlsext_host_name failed");
+        boost::system::error_code ec{static_cast<int>(ERR_get_error()), net::error::get_ssl_category()};
+        _connection_state = connection_state::NOT_CONNECTED;
+        co_return ec;
     }
 
-  if (_is_tls)
-    {
-      beast::get_lowest_layer(*_ssl_stream)
-        .expires_after(std::chrono::seconds(30));
-      auto [connect_ec, endpoint]
-        = co_await beast::get_lowest_layer(*_ssl_stream)
-            .async_connect(endpoints, net::as_tuple(net::use_awaitable));
+    tcp::resolver resolver{_ioc};
+    auto [resolve_ec, endpoints]{
+        co_await resolver.async_resolve(url.host(), url.port(), net::as_tuple(net::use_awaitable))};
 
-      if (connect_ec)
+    if (resolve_ec)
+    {
+        LOG_ERROR("async_resolve() failed");
+        _connection_state = connection_state::NOT_CONNECTED;
+        co_return resolve_ec;
+    }
+
+    if (_is_tls)
+    {
+        beast::get_lowest_layer(*_ssl_stream).expires_after(std::chrono::seconds(30));
+        auto [connect_ec, endpoint] =
+            co_await beast::get_lowest_layer(*_ssl_stream).async_connect(endpoints, net::as_tuple(net::use_awaitable));
+
+        if (connect_ec)
         {
-          LOG_ERROR("async_connect() failed");
-          _connection_state = connection_state::NOT_CONNECTED;
-          co_return connect_ec;
+            LOG_ERROR("async_connect() failed");
+            _connection_state = connection_state::NOT_CONNECTED;
+            co_return connect_ec;
         }
 
-      beast::get_lowest_layer(*_ssl_stream)
-        .expires_after(std::chrono::seconds(30));
-      auto [handshake_ec] = co_await _ssl_stream->async_handshake(
-        ssl::stream_base::client,
-        net::as_tuple(net::use_awaitable));
+        beast::get_lowest_layer(*_ssl_stream).expires_after(std::chrono::seconds(30));
+        auto [handshake_ec] =
+            co_await _ssl_stream->async_handshake(ssl::stream_base::client, net::as_tuple(net::use_awaitable));
 
-      if (handshake_ec)
+        if (handshake_ec)
         {
-          LOG_ERROR("async_handshake() failed");
-          _connection_state = connection_state::NOT_CONNECTED;
-          co_return handshake_ec;
+            LOG_ERROR("async_handshake() failed");
+            _connection_state = connection_state::NOT_CONNECTED;
+            co_return handshake_ec;
         }
     }
-  else
+    else
     {
-      _tcp_stream->expires_after(std::chrono::seconds(30));
-      auto [connect_ec, endpoint] = co_await _tcp_stream->async_connect(
-        endpoints,
-        net::as_tuple(net::use_awaitable));
+        _tcp_stream->expires_after(std::chrono::seconds(30));
+        auto [connect_ec, endpoint] = co_await _tcp_stream->async_connect(endpoints, net::as_tuple(net::use_awaitable));
 
-      if (connect_ec)
+        if (connect_ec)
         {
-          LOG_ERROR("async_connect() failed");
-          _connection_state = connection_state::NOT_CONNECTED;
-          co_return connect_ec;
+            LOG_ERROR("async_connect() failed");
+            _connection_state = connection_state::NOT_CONNECTED;
+            co_return connect_ec;
         }
     }
 
-  _connection_state = connection_state::CONNECTED;
-  _current_origin   = std::move(url);
-  LOG_INFO("successfully connected to {}", url_sv);
-  co_return make_error_code(boost::system::errc::success);
+    _connection_state = connection_state::CONNECTED;
+    _current_origin   = std::move(url);
+    LOG_INFO("successfully connected to {}", url_sv);
+    co_return make_error_code(boost::system::errc::success);
 }
 
-void
-async_rest_client::enqueue_task(std::unique_ptr<base_task> &&task)
+void async_rest_client::enqueue_task(std::unique_ptr<base_task>&& task)
 {
-  _tasks.push_back(std::move(task));
-  LOG_TRACE("enqueued task {}", _tasks.front()->endpoint().c_str());
-  LOG_TRACE("{} tasks in queue", _tasks.size());
+    _tasks.push_back(std::move(task));
+    LOG_TRACE("enqueued task {}", _tasks.front()->endpoint().c_str());
+    LOG_TRACE("{} tasks in queue", _tasks.size());
 
-  if (!_is_processing)
+    if (!_is_processing)
     {
-      LOG_TRACE("spawning process_queue() coroutine...");
-      net::co_spawn(_ioc, process_queue(), net::detached);
+        LOG_TRACE("spawning process_queue() coroutine...");
+        net::co_spawn(_ioc, process_queue(), net::detached);
     }
 }
 
-net::awaitable<void>
-async_rest_client::process_queue()
+net::awaitable<void> async_rest_client::process_queue()
 {
-  assert(
-    !_is_processing && "process_queue is being launched more than one time");
+    assert(!_is_processing && "process_queue is being launched more than one time");
 
-  _is_processing = true;
+    _is_processing = true;
 
-  LOG_TRACE("starting request task queue processing");
+    LOG_TRACE("starting request task queue processing");
 
-  while (!_tasks.empty())
+    while (!_tasks.empty())
     {
-      const std::unique_ptr<base_task> &current_task { _tasks.front() };
+        const std::unique_ptr<base_task>& current_task{_tasks.front()};
 
-      const boost::url &task_endpoint { current_task->endpoint() };
+        const boost::url& task_endpoint{current_task->endpoint()};
 
-      bool is_new_connection_required { false };
+        bool is_new_connection_required{false};
 
-      if (_connection_state != connection_state::CONNECTED)
+        if (_connection_state != connection_state::CONNECTED)
         {
-          // Not current connect
+            // Not current connect
 
-          is_new_connection_required = true;
+            is_new_connection_required = true;
         }
-      else if (
-        _current_origin.encoded_origin() != task_endpoint.encoded_origin())
+        else if (_current_origin.encoded_origin() != task_endpoint.encoded_origin())
         {
-          // Connected to a different host
-          is_new_connection_required = true;
-          co_await graceful_shutdown();
+            // Connected to a different host
+            is_new_connection_required = true;
+            co_await graceful_shutdown();
         }
 
-      if (is_new_connection_required)
+        if (is_new_connection_required)
         {
+            const std::string_view new_origin{task_endpoint.encoded_origin()};
 
-          const std::string_view new_origin { task_endpoint.encoded_origin() };
+            LOG_INFO("changing connected host from {} -> {}", _current_origin.host(), new_origin);
 
-          LOG_INFO(
-            "changing connected host from {} -> {}",
-            _current_origin.host(),
-            new_origin);
-
-          if (const auto connect_ec = co_await connect(new_origin))
+            if (const auto connect_ec = co_await connect(new_origin))
             {
+                LOG_ERROR("failed to change connection from {} -> {}", _current_origin.host(), new_origin);
 
-              LOG_ERROR(
-                "failed to change connection from {} -> {}",
-                _current_origin.host(),
-                new_origin);
-
-              current_task->fail(connect_ec);
-              _tasks.pop_front();
-              continue;
+                current_task->fail(connect_ec);
+                _tasks.pop_front();
+                continue;
             }
         }
 
-      if (_is_tls)
+        if (_is_tls)
         {
-          connection_context ctx { *_ssl_stream, *_buffer };
-          co_await current_task->send(ctx);
+            connection_context ctx{*_ssl_stream, *_buffer};
+            co_await current_task->send(ctx);
         }
-      else
+        else
         {
-          connection_context ctx { *_tcp_stream, *_buffer };
-          co_await current_task->send(ctx);
+            connection_context ctx{*_tcp_stream, *_buffer};
+            co_await current_task->send(ctx);
         }
 
-      _tasks.pop_front();
+        _tasks.pop_front();
     }
 
-  LOG_TRACE("done processing all request tasks");
+    LOG_TRACE("done processing all request tasks");
 
-  _is_processing = false;
+    _is_processing = false;
 
-  co_return;
+    co_return;
 }
 
-net::awaitable<void>
-async_rest_client::graceful_shutdown()
+net::awaitable<void> async_rest_client::graceful_shutdown()
 {
-  if (_connection_state != connection_state::CONNECTED)
+    if (_connection_state != connection_state::CONNECTED)
     {
-      LOG_WARN("calling graceful_shutdown() when not connected");
-      co_return;
+        LOG_WARN("calling graceful_shutdown() when not connected");
+        co_return;
     }
 
-  if (_is_tls)
+    if (_is_tls)
     {
-      auto [ec] = co_await _ssl_stream->async_shutdown(
-        net::as_tuple(net::use_awaitable));
+        auto [ec] = co_await _ssl_stream->async_shutdown(net::as_tuple(net::use_awaitable));
 
-      if (ec == ssl::error::stream_truncated)
-        ec = {};
+        if (ec == ssl::error::stream_truncated)
+            ec = {};
 
-      beast::get_lowest_layer(*_ssl_stream).close();
-      _ssl_stream = std::make_unique<beast::ssl_stream<beast::tcp_stream>>(
-        _ioc,
-        _ssl_ctx);
+        beast::get_lowest_layer(*_ssl_stream).close();
+        _ssl_stream = std::make_unique<beast::ssl_stream<beast::tcp_stream>>(_ioc, _ssl_ctx);
 
-      if (ec)
+        if (ec)
         {
-          throw boost::system::system_error { ec, "SSL shutdown failed" };
+            throw boost::system::system_error{ec, "SSL shutdown failed"};
         }
     }
-  else
+    else
     {
-      _tcp_stream->close();
-      _tcp_stream = std::make_unique<beast::tcp_stream>(_ioc);
+        _tcp_stream->close();
+        _tcp_stream = std::make_unique<beast::tcp_stream>(_ioc);
     }
 
-  _buffer->consume(_buffer->size());
+    _buffer->consume(_buffer->size());
 
-  _current_origin.clear();
-  _is_tls = false;
+    _current_origin.clear();
+    _is_tls = false;
 
-  _connection_state = connection_state::NOT_CONNECTED;
-  co_return;
+    _connection_state = connection_state::NOT_CONNECTED;
+    co_return;
 }
 
 } // namespace async_rest_client

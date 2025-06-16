@@ -18,49 +18,43 @@ namespace net   = boost::asio;
 namespace beast = boost::beast;
 namespace http  = beast::http;
 
-template <typename ReqBody, typename ResBody>
-  requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
+template<typename ReqBody, typename ResBody>
+    requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
 class typed_task final : public base_task
 {
 public:
+    typed_task(
+        net::io_context::executor_type executor,
+        std::string_view               url,
+        http::verb                     verb,
+        http::fields                   headers,
+        typename ReqBody::value_type   request_payload);
 
-  typed_task(
-    net::io_context::executor_type executor,
-    std::string_view               url,
-    http::verb                     verb,
-    http::fields                   headers,
-    typename ReqBody::value_type   request_payload);
+    //
+    // Start of base_task methods
 
-  //
-  // Start of base_task methods
+    net::awaitable<bool> send(http_connection_context& ctx) override;
+    net::awaitable<bool> send(https_connection_context& ctx) override;
+    void                 fail(boost::system::error_code ec) override;
 
-  net::awaitable<bool> send(http_connection_context &ctx) override;
-  net::awaitable<bool> send(https_connection_context &ctx) override;
-  void                 fail(boost::system::error_code ec) override;
+    //
+    // Start of typed_task methods
 
-  //
-  // Start of typed_task methods
+    net::awaitable<std::tuple<boost::system::error_code, http::response<ResBody>>> async_wait();
 
-  net::awaitable<
-    std::tuple<boost::system::error_code, http::response<ResBody>>>
-  async_wait();
-
-  [[nodiscard]]
-  const boost::url &endpoint() const override;
+    [[nodiscard]]
+    const boost::url& endpoint() const override;
 
 private:
+    template<SupportedStreamType Stream>
+    net::awaitable<bool> run_impl(Stream& stream, beast::flat_buffer& buffer);
 
-  template <SupportedStreamType Stream>
-  net::awaitable<bool> run_impl(Stream &stream, beast::flat_buffer &buffer);
-
-  net::any_completion_handler<
-    void(boost::system::error_code, http::response<ResBody>)>
-                                 _handler {};
-  net::io_context::executor_type _executor;
-  boost::url                     _endpoint {};
-  http::verb                     _verb {};
-  http::fields                   _headers {};
-  typename ReqBody::value_type   _request_payload {};
+    net::any_completion_handler<void(boost::system::error_code, http::response<ResBody>)> _handler{};
+    net::io_context::executor_type                                                        _executor;
+    boost::url                                                                            _endpoint{};
+    http::verb                                                                            _verb{};
+    http::fields                                                                          _headers{};
+    typename ReqBody::value_type                                                          _request_payload{};
 };
 
 //
@@ -69,131 +63,120 @@ private:
 //
 // Ctor
 
-template <typename ReqBody, typename ResBody>
-  requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
+template<typename ReqBody, typename ResBody>
+    requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
 typed_task<ReqBody, ResBody>::typed_task(
-  net::io_context::executor_type executor,
-  const std::string_view         url,
-  const http::verb               verb,
-  http::fields                   headers,
-  typename ReqBody::value_type   request_payload)
-  : _executor { std::move(executor) }
-  , _endpoint { make_http_https_url(url) }
-  , _verb { verb }
-  , _headers { std::move(headers) }
-  , _request_payload { std::move(request_payload) }
+    net::io_context::executor_type executor,
+    const std::string_view         url,
+    const http::verb               verb,
+    http::fields                   headers,
+    typename ReqBody::value_type   request_payload)
+    : _executor{std::move(executor)},
+      _endpoint{make_http_https_url(url)},
+      _verb{verb},
+      _headers{std::move(headers)},
+      _request_payload{std::move(request_payload)}
 {
 }
 
 //
 // Start of public methods
 
-template <typename ReqBody, typename ResBody>
-  requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
-net::awaitable<bool>
-typed_task<ReqBody, ResBody>::send(http_connection_context &ctx)
+template<typename ReqBody, typename ResBody>
+    requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
+net::awaitable<bool> typed_task<ReqBody, ResBody>::send(http_connection_context& ctx)
 {
-  co_return co_await run_impl(ctx.stream, ctx.buffer);
+    co_return co_await run_impl(ctx.stream, ctx.buffer);
 }
 
-template <typename ReqBody, typename ResBody>
-  requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
-net::awaitable<bool>
-typed_task<ReqBody, ResBody>::send(https_connection_context &ctx)
+template<typename ReqBody, typename ResBody>
+    requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
+net::awaitable<bool> typed_task<ReqBody, ResBody>::send(https_connection_context& ctx)
 {
-  co_return co_await run_impl(ctx.stream, ctx.buffer);
+    co_return co_await run_impl(ctx.stream, ctx.buffer);
 }
 
-template <typename ReqBody, typename ResBody>
-  requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
-void
-typed_task<ReqBody, ResBody>::fail(boost::system::error_code ec)
+template<typename ReqBody, typename ResBody>
+    requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
+void typed_task<ReqBody, ResBody>::fail(boost::system::error_code ec)
 {
-  if (_handler)
+    if (_handler)
     {
-      std::move(_handler)(ec, http::response<ResBody> {});
+        std::move(_handler)(ec, http::response<ResBody>{});
     }
 }
 
-template <typename ReqBody, typename ResBody>
-  requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
+template<typename ReqBody, typename ResBody>
+    requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
 net::awaitable<std::tuple<boost::system::error_code, http::response<ResBody>>>
-typed_task<ReqBody, ResBody>::async_wait()
+    typed_task<ReqBody, ResBody>::async_wait()
 {
-  auto [ec, response] = co_await net::async_initiate<
-    void(boost::system::error_code, http::response<ResBody>)>(
-    [this]<typename Handler>(Handler &&handler) {
-      _handler = [w = net::make_work_guard(_executor),
-                  h = std::forward<Handler>(
-                    handler)](auto error_code, auto res) mutable {
-        std::move(h)(error_code, std::move(res));
-      };
-    },
-    net::as_tuple(net::use_awaitable));
+    auto [ec, response] = co_await net::async_initiate<void(boost::system::error_code, http::response<ResBody>)>(
+        [this]<typename Handler>(Handler&& handler)
+        {
+            _handler = [w = net::make_work_guard(_executor), h = std::forward<Handler>(handler)](
+                           auto error_code, auto res) mutable { std::move(h)(error_code, std::move(res)); };
+        },
+        net::as_tuple(net::use_awaitable));
 
-  co_return std::make_tuple(ec, std::move(response));
+    co_return std::make_tuple(ec, std::move(response));
 }
 
-template <typename ReqBody, typename ResBody>
-  requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
-const boost::url &
-typed_task<ReqBody, ResBody>::endpoint() const
+template<typename ReqBody, typename ResBody>
+    requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
+const boost::url& typed_task<ReqBody, ResBody>::endpoint() const
 {
-  return _endpoint;
+    return _endpoint;
 }
 
 //
 // Start of private methods
 
-template <typename ReqBody, typename ResBody>
-  requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
-template <SupportedStreamType Stream>
-net::awaitable<bool>
-typed_task<ReqBody, ResBody>::run_impl(
-  Stream             &stream,
-  beast::flat_buffer &buffer)
+template<typename ReqBody, typename ResBody>
+    requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
+template<SupportedStreamType Stream>
+net::awaitable<bool> typed_task<ReqBody, ResBody>::run_impl(Stream& stream, beast::flat_buffer& buffer)
 {
-  try
+    try
     {
-      http::request<ReqBody> req { _verb, _endpoint.encoded_target(), 11 };
-      req.set(http::field::host, _endpoint.encoded_host());
-      req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+        http::request<ReqBody> req{_verb, _endpoint.encoded_target(), 11};
+        req.set(http::field::host, _endpoint.encoded_host());
+        req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
-      for (const auto &header : _headers)
-        req.set(header.name_string(), header.value());
+        for (const auto& header : _headers)
+            req.set(header.name_string(), header.value());
 
-      req.set(http::field::connection, "keep-alive");
+        req.set(http::field::connection, "keep-alive");
 
-      req.body() = std::move(_request_payload);
-      req.prepare_payload();
+        req.body() = std::move(_request_payload);
+        req.prepare_payload();
 
-      LOG_INFO("sending request to {}", _endpoint.encoded_host());
-      LOG_TRACE("request: {}", req);
+        LOG_INFO("sending request to {}", _endpoint.encoded_host());
+        LOG_TRACE("request: {}", req);
 
-      co_await http::async_write(stream, req, net::use_awaitable);
+        co_await http::async_write(stream, req, net::use_awaitable);
 
-      http::response<ResBody> res {};
-      co_await http::async_read(stream, buffer, res, net::use_awaitable);
-      buffer.consume(buffer.size());
+        http::response<ResBody> res{};
+        co_await http::async_read(stream, buffer, res, net::use_awaitable);
+        buffer.consume(buffer.size());
 
-      assert(_handler && "Handler must be set before run_impl is called");
-      LOG_TRACE("response: {}", res);
-      std::move(_handler)(boost::system::error_code {}, std::move(res));
-      co_return true;
+        assert(_handler && "Handler must be set before run_impl is called");
+        LOG_TRACE("response: {}", res);
+        std::move(_handler)(boost::system::error_code{}, std::move(res));
+        co_return true;
     }
-  catch (const boost::system::system_error &e)
+    catch (const boost::system::system_error& e)
     {
-      LOG_ERROR("{}: {}", e.code().message(), e.what());
-      std::move(_handler)(e.code(), http::response<ResBody> {});
-      co_return false;
+        LOG_ERROR("{}: {}", e.code().message(), e.what());
+        std::move(_handler)(e.code(), http::response<ResBody>{});
+        co_return false;
     }
-  catch (const std::exception &e)
+    catch (const std::exception& e)
     {
-      LOG_ERROR("{}", e.what());
-      boost::system::error_code ec { boost::system::errc::io_error,
-                                     boost::system::generic_category() };
-      std::move(_handler)(ec, http::response<ResBody> {});
-      co_return false;
+        LOG_ERROR("{}", e.what());
+        boost::system::error_code ec{boost::system::errc::io_error, boost::system::generic_category()};
+        std::move(_handler)(ec, http::response<ResBody>{});
+        co_return false;
     }
 }
 } // namespace async_rest_client
