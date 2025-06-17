@@ -28,7 +28,7 @@ TEST_F(AsyncRestClientGetTest, BasicGetRequest)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec, response] = co_await _client->get<http::string_body>("https://httpbin.org/get");
+            auto [ec, response] = co_await _client->request<http::verb::get>("https://httpbin.org/get");
 
             EXPECT_FALSE(ec) << "GET request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);
@@ -55,7 +55,7 @@ TEST_F(AsyncRestClientGetTest, GetWithCustomHeaders)
             headers.set(http::field::user_agent, "TestAgent/1.0");
             headers.insert("X-Custom-Header", "TestValue");
 
-            auto [ec, response] = co_await _client->get<http::string_body>("https://httpbin.org/get", headers);
+            auto [ec, response] = co_await _client->request<http::verb::get>("https://httpbin.org/get", headers);
 
             EXPECT_FALSE(ec) << "GET request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);
@@ -78,7 +78,7 @@ TEST_F(AsyncRestClientGetTest, GetWithQueryParameters)
         [this]() -> boost::asio::awaitable<void>
         {
             auto [ec, response] =
-                co_await _client->get<http::string_body>("https://httpbin.org/get?param1=value1&param2=value2");
+                co_await _client->request<http::verb::get>("https://httpbin.org/get?param1=value1&param2=value2");
 
             EXPECT_FALSE(ec) << "GET request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);
@@ -101,7 +101,7 @@ TEST_F(AsyncRestClientGetTest, SequentialGetRequests)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec1, response1] = co_await _client->get<http::string_body>("https://httpbin.org/get?request=1");
+            auto [ec1, response1] = co_await _client->request<http::verb::get>("https://httpbin.org/get?request=1");
 
             EXPECT_FALSE(ec1) << "First GET request failed: " << ec1.message();
             EXPECT_EQ(response1.result(), http::status::ok);
@@ -110,7 +110,7 @@ TEST_F(AsyncRestClientGetTest, SequentialGetRequests)
             const auto& args1 = json1["args"];
             EXPECT_EQ(args1["request"], "1");
 
-            auto [ec2, response2] = co_await _client->get<http::string_body>("https://httpbin.org/get?request=2");
+            auto [ec2, response2] = co_await _client->request<http::verb::get>("https://httpbin.org/get?request=2");
 
             EXPECT_FALSE(ec2) << "Second GET request failed: " << ec2.message();
             EXPECT_EQ(response2.result(), http::status::ok);
@@ -131,8 +131,8 @@ TEST_F(AsyncRestClientGetTest, ConcurrentGetRequests)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto awaitable1 = _client->get<http::string_body>("https://httpbin.org/get?concurrent=1");
-            auto awaitable2 = _client->get<http::string_body>("https://httpbin.org/get?concurrent=2");
+            auto awaitable1 = _client->request<http::verb::get>("https://httpbin.org/get?concurrent=1");
+            auto awaitable2 = _client->request<http::verb::get>("https://httpbin.org/get?concurrent=2");
 
             auto [ec1, response1] = co_await std::move(awaitable1);
             auto [ec2, response2] = co_await std::move(awaitable2);
@@ -164,7 +164,7 @@ TEST_F(AsyncRestClientGetTest, MixedHostRequests)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec1, response1] = co_await _client->get<http::string_body>("https://httpbin.org/get");
+            auto [ec1, response1] = co_await _client->request<http::verb::get>("https://httpbin.org/get");
 
             EXPECT_FALSE(ec1) << "First mixed host GET failed: " << ec1.message();
             EXPECT_EQ(response1.result(), http::status::ok);
@@ -172,7 +172,7 @@ TEST_F(AsyncRestClientGetTest, MixedHostRequests)
             const auto json1 = nlohmann::json::parse(response1.body());
             EXPECT_EQ(json1["url"], "https://httpbin.org/get");
 
-            auto [ec2, response2] = co_await _client->get<http::string_body>("https://postman-echo.com/get");
+            auto [ec2, response2] = co_await _client->request<http::verb::get>("https://postman-echo.com/get");
 
             EXPECT_FALSE(ec2) << "Second mixed host GET failed: " << ec2.message();
             EXPECT_EQ(response2.result(), http::status::ok);
@@ -192,17 +192,17 @@ TEST_F(AsyncRestClientGetTest, HttpAndHttpsRequests)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec_https, https_response] = co_await _client->get<http::string_body>("https://httpbin.org/get");
+            auto [ec_https, https_response] = co_await _client->request<http::verb::get>("https://httpbin.org/get");
 
             EXPECT_FALSE(ec_https) << "HTTPS GET failed: " << ec_https.message();
             EXPECT_EQ(https_response.result(), http::status::ok);
 
-            auto [ec_http, http_response] = co_await _client->get<http::string_body>("http://httpbin.org/get");
+            auto [ec_http, http_response] = co_await _client->request<http::verb::get>("http://httpbin.org/get");
 
             EXPECT_FALSE(ec_http) << "HTTP GET failed: " << ec_http.message();
             EXPECT_EQ(http_response.result(), http::status::ok);
 
-            auto [ec_https2, https_response2] = co_await _client->get<http::string_body>("https://httpbin.org/get");
+            auto [ec_https2, https_response2] = co_await _client->request<http::verb::get>("https://httpbin.org/get");
             EXPECT_FALSE(ec_https2) << "Second HTTPS GET failed: " << ec_https2.message();
             EXPECT_EQ(https_response2.result(), http::status::ok);
         },
@@ -219,7 +219,7 @@ TEST_F(AsyncRestClientGetTest, GetInvalidUrl)
         [this]() -> boost::asio::awaitable<void>
         {
             auto [ec, response] =
-                co_await _client->get<http::string_body>("https://this-host-does-not-exist-12345.com/get");
+                co_await _client->request<http::verb::get>("https://this-host-does-not-exist-12345.com/get");
 
             EXPECT_TRUE(ec) << "Expected error for invalid host but got success";
             EXPECT_FALSE(ec.message().empty());
@@ -236,7 +236,7 @@ TEST_F(AsyncRestClientGetTest, Get404Response)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec, response] = co_await _client->get<http::string_body>("https://httpbin.org/status/404");
+            auto [ec, response] = co_await _client->request<http::verb::get>("https://httpbin.org/status/404");
 
             EXPECT_FALSE(ec) << "GET request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::not_found);
@@ -253,7 +253,7 @@ TEST_F(AsyncRestClientGetTest, GetRedirectResponse)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec, response] = co_await _client->get<http::string_body>("https://httpbin.org/redirect/1");
+            auto [ec, response] = co_await _client->request<http::verb::get>("https://httpbin.org/redirect/1");
 
             EXPECT_FALSE(ec) << "GET request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::found);
@@ -271,7 +271,7 @@ TEST_F(AsyncRestClientGetTest, GetLargeResponse)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec, response] = co_await _client->get<http::string_body>("https://httpbin.org/bytes/10000");
+            auto [ec, response] = co_await _client->request<http::verb::get>("https://httpbin.org/bytes/10000");
 
             EXPECT_FALSE(ec) << "GET request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);
@@ -289,7 +289,7 @@ TEST_F(AsyncRestClientGetTest, ResponseHeadersArePresent)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec, response] = co_await _client->get<http::string_body>("https://httpbin.org/get");
+            auto [ec, response] = co_await _client->request<http::verb::get>("https://httpbin.org/get");
 
             EXPECT_FALSE(ec) << "GET request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);
@@ -313,7 +313,7 @@ TEST_F(AsyncRestClientGetTest, GetWithNoHeaders)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec, response] = co_await _client->get<http::string_body>("https://httpbin.org/get", {});
+            auto [ec, response] = co_await _client->request<http::verb::get>("https://httpbin.org/get", {});
 
             EXPECT_FALSE(ec) << "GET request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);

@@ -25,8 +25,8 @@ class typed_task final : public base_task
 public:
     typed_task(
         net::io_context::executor_type executor,
-        std::string_view               url,
         http::verb                     verb,
+        std::string_view               url,
         http::fields                   headers,
         typename ReqBody::value_type   request_payload);
 
@@ -67,8 +67,8 @@ template<typename ReqBody, typename ResBody>
     requires SupportedRequestBody<ReqBody> && SupportedResponseBody<ResBody>
 typed_task<ReqBody, ResBody>::typed_task(
     net::io_context::executor_type executor,
-    const std::string_view         url,
     const http::verb               verb,
+    const std::string_view         url,
     http::fields                   headers,
     typename ReqBody::value_type   request_payload)
     : _executor{std::move(executor)},

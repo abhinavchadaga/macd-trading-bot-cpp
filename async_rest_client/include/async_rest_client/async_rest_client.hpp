@@ -3,6 +3,7 @@
 #include "base_task.hpp"
 #include "concepts.hpp"
 #include "typed_task.hpp"
+#include "utils.hpp"
 
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -31,15 +32,13 @@ public:
 
     net::awaitable<boost::system::error_code> connect(std::string_view url_sv);
 
-    template<typename ResponseBody>
-        requires SupportedResponseBody<ResponseBody>
+    template<
+        http::verb Verb,
+        typename RequestBody  = typename default_body_types<Verb>::request_body,
+        typename ResponseBody = typename default_body_types<Verb>::response_body>
+        requires ValidVerbBodyCombination<Verb, RequestBody, ResponseBody>
     net::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody>>>
-        get(std::string_view url, http::fields headers = {});
-
-    template<typename RequestBody, typename ResponseBody>
-        requires SupportedRequestBody<RequestBody> && SupportedResponseBody<ResponseBody>
-    net::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody>>>
-        post(const std::string& url, const http::fields& headers, typename RequestBody::value_type body);
+        request(std::string_view url, http::fields headers = {}, typename RequestBody::value_type body = {});
 
 private:
     enum class connection_state
@@ -58,6 +57,13 @@ private:
     void                 enqueue_task(std::unique_ptr<base_task>&& task);
     net::awaitable<void> graceful_shutdown();
 
+    //
+    // Task helpers
+
+    template<http::verb Verb, typename RequestBody, typename ResponseBody>
+    std::unique_ptr<base_task>
+        make_task(std::string_view url, http::fields headers = {}, typename RequestBody::value_type body = {});
+
     std::deque<std::unique_ptr<base_task>> _tasks;
     bool                                   _is_processing{false};
 
@@ -75,35 +81,27 @@ private:
 //
 // Template Implementations
 
-template<typename ResponseBody>
-    requires SupportedResponseBody<ResponseBody>
+template<http::verb Verb, typename RequestBody, typename ResponseBody>
+    requires ValidVerbBodyCombination<Verb, RequestBody, ResponseBody>
 net::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody>>>
-    async_rest_client::get(std::string_view url, http::fields headers)
+    async_rest_client::request(std::string_view url, http::fields headers, typename RequestBody::value_type body)
 {
-    LOG_INFO("making GET request to {}", url);
-    auto task{std::make_unique<typed_task<http::empty_body, ResponseBody>>(
-        _ioc.get_executor(), url, http::verb::get, headers, http::empty_body::value_type{})};
+    LOG_INFO("making {} request to {}", http_verb_to_string<Verb>(), url);
 
-    typed_task<http::empty_body, ResponseBody>* task_ptr{task.get()};
+    auto task{make_task<Verb, RequestBody, ResponseBody>(std::move(url), std::move(headers), std::move(body))};
+    typed_task<RequestBody, ResponseBody>* task_ptr{static_cast<typed_task<RequestBody, ResponseBody>*>(task.get())};
     enqueue_task(std::move(task));
 
     auto [ec, response]{co_await task_ptr->async_wait()};
     co_return std::make_tuple(ec, std::move(response));
 }
 
-template<typename RequestBody, typename ResponseBody>
-    requires SupportedRequestBody<RequestBody> && SupportedResponseBody<ResponseBody>
-boost::asio::awaitable<std::tuple<boost::system::error_code, http::response<ResponseBody>>>
-    async_rest_client::post(const std::string& url, const http::fields& headers, typename RequestBody::value_type body)
+template<http::verb Verb, typename RequestBody, typename ResponseBody>
+std::unique_ptr<base_task>
+    async_rest_client::make_task(std::string_view url, http::fields headers, typename RequestBody::value_type body)
 {
-    auto task = std::make_unique<typed_task<RequestBody, ResponseBody>>(
-        _ioc.get_executor(), url, http::verb::post, headers, std::move(body));
-
-    typed_task<RequestBody, ResponseBody>* task_ptr{task.get()};
-    enqueue_task(std::move(task));
-
-    auto [ec, response] = co_await task_ptr->async_wait();
-    co_return std::make_tuple(ec, std::move(response));
+    return std::make_unique<typed_task<RequestBody, ResponseBody>>(
+        _ioc.get_executor(), Verb, std::move(url), std::move(headers), std::move(body));
 }
 
 } // namespace async_rest_client
