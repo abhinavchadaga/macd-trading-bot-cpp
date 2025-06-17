@@ -34,8 +34,8 @@ TEST_F(AsyncRestClientPatchTest, BasicPatchRequest)
             nlohmann::json json_body{{"operation", "update"}, {"field", "value"}};
             std::string    body_str = json_body.dump();
 
-            auto [ec, response] = co_await _client->patch<http::string_body, http::string_body>(
-                "https://httpbin.org/patch", headers, body_str);
+            auto [ec, response] =
+                co_await _client->request<http::verb::patch>("https://httpbin.org/patch", headers, body_str);
 
             EXPECT_FALSE(ec) << "PATCH request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);
@@ -67,8 +67,8 @@ TEST_F(AsyncRestClientPatchTest, PatchWithCustomHeaders)
             nlohmann::json json_body{{"patch_test", "headers"}, {"id", 456}};
             std::string    body_str = json_body.dump();
 
-            auto [ec, response] = co_await _client->patch<http::string_body, http::string_body>(
-                "https://httpbin.org/patch", headers, body_str);
+            auto [ec, response] =
+                co_await _client->request<http::verb::patch>("https://httpbin.org/patch", headers, body_str);
 
             EXPECT_FALSE(ec) << "PATCH request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);
@@ -95,8 +95,8 @@ TEST_F(AsyncRestClientPatchTest, Patch404Response)
             headers.set(http::field::content_type, "application/json");
             std::string body = R"({"test": "404"})";
 
-            auto [ec, response] = co_await _client->patch<http::string_body, http::string_body>(
-                "https://httpbin.org/status/404", headers, body);
+            auto [ec, response] =
+                co_await _client->request<http::verb::patch>("https://httpbin.org/status/404", headers, body);
 
             EXPECT_FALSE(ec) << "PATCH request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::not_found);
@@ -117,7 +117,7 @@ TEST_F(AsyncRestClientPatchTest, PatchInvalidHost)
             headers.set(http::field::content_type, "application/json");
             std::string body = R"({"test": "invalid_host"})";
 
-            auto [ec, response] = co_await _client->patch<http::string_body, http::string_body>(
+            auto [ec, response] = co_await _client->request<http::verb::patch>(
                 "https://this-host-does-not-exist-12345.com/patch", headers, body);
 
             EXPECT_TRUE(ec) << "Expected error for invalid host but got success";

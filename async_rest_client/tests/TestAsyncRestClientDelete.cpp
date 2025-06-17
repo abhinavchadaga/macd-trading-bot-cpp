@@ -28,7 +28,7 @@ TEST_F(AsyncRestClientDeleteTest, BasicDeleteRequest)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec, response] = co_await _client->delete_<http::string_body>("https://httpbin.org/delete");
+            auto [ec, response] = co_await _client->request<http::verb::delete_>("https://httpbin.org/delete");
 
             EXPECT_FALSE(ec) << "DELETE request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);
@@ -55,7 +55,7 @@ TEST_F(AsyncRestClientDeleteTest, DeleteWithCustomHeaders)
             headers.set(http::field::user_agent, "TestAgent/1.0");
             headers.insert("X-Delete-Header", "DeleteTestValue");
 
-            auto [ec, response] = co_await _client->delete_<http::string_body>("https://httpbin.org/delete", headers);
+            auto [ec, response] = co_await _client->request<http::verb::delete_>("https://httpbin.org/delete", headers);
 
             EXPECT_FALSE(ec) << "DELETE request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);
@@ -78,7 +78,7 @@ TEST_F(AsyncRestClientDeleteTest, DeleteWithQueryParameters)
         [this]() -> boost::asio::awaitable<void>
         {
             auto [ec, response] =
-                co_await _client->delete_<http::string_body>("https://httpbin.org/delete?resource=123&force=true");
+                co_await _client->request<http::verb::delete_>("https://httpbin.org/delete?resource=123&force=true");
 
             EXPECT_FALSE(ec) << "DELETE request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::ok);
@@ -101,7 +101,7 @@ TEST_F(AsyncRestClientDeleteTest, Delete404Response)
         _ioc,
         [this]() -> boost::asio::awaitable<void>
         {
-            auto [ec, response] = co_await _client->delete_<http::string_body>("https://httpbin.org/status/404");
+            auto [ec, response] = co_await _client->request<http::verb::delete_>("https://httpbin.org/status/404");
 
             EXPECT_FALSE(ec) << "DELETE request failed: " << ec.message();
             EXPECT_EQ(response.result(), http::status::not_found);
@@ -119,7 +119,7 @@ TEST_F(AsyncRestClientDeleteTest, DeleteInvalidHost)
         [this]() -> boost::asio::awaitable<void>
         {
             auto [ec, response] =
-                co_await _client->delete_<http::string_body>("https://this-host-does-not-exist-12345.com/delete");
+                co_await _client->request<http::verb::delete_>("https://this-host-does-not-exist-12345.com/delete");
 
             EXPECT_TRUE(ec) << "Expected error for invalid host but got success";
         },

@@ -32,7 +32,7 @@ TEST_F(AsyncRestClientIntegrationTest, SequentialAllVerbsRequests)
             headers.set(http::field::content_type, "application/json");
 
             // GET request
-            auto [ec1, response1] = co_await _client->get<http::string_body>("https://httpbin.org/get?sequential=1");
+            auto [ec1, response1] = co_await _client->request<http::verb::get>("https://httpbin.org/get?sequential=1");
 
             EXPECT_FALSE(ec1) << "GET request failed: " << ec1.message();
             EXPECT_EQ(response1.result(), http::status::ok);
@@ -44,8 +44,8 @@ TEST_F(AsyncRestClientIntegrationTest, SequentialAllVerbsRequests)
             nlohmann::json post_body{{"action", "create"}, {"id", 1}};
             std::string    post_str = post_body.dump();
 
-            auto [ec2, response2] = co_await _client->post<http::string_body, http::string_body>(
-                "https://httpbin.org/post", headers, post_str);
+            auto [ec2, response2] =
+                co_await _client->request<http::verb::post>("https://httpbin.org/post", headers, post_str);
 
             EXPECT_FALSE(ec2) << "POST request failed: " << ec2.message();
             EXPECT_EQ(response2.result(), http::status::ok);
@@ -54,7 +54,7 @@ TEST_F(AsyncRestClientIntegrationTest, SequentialAllVerbsRequests)
             EXPECT_EQ(json2["json"]["action"], "create");
 
             // DELETE request
-            auto [ec3, response3] = co_await _client->delete_<http::string_body>("https://httpbin.org/delete?id=1");
+            auto [ec3, response3] = co_await _client->request<http::verb::delete_>("https://httpbin.org/delete?id=1");
 
             EXPECT_FALSE(ec3) << "DELETE request failed: " << ec3.message();
             EXPECT_EQ(response3.result(), http::status::ok);
@@ -66,8 +66,8 @@ TEST_F(AsyncRestClientIntegrationTest, SequentialAllVerbsRequests)
             nlohmann::json patch_body{{"action", "partial_update"}, {"id", 1}};
             std::string    patch_str = patch_body.dump();
 
-            auto [ec4, response4] = co_await _client->patch<http::string_body, http::string_body>(
-                "https://httpbin.org/patch", headers, patch_str);
+            auto [ec4, response4] =
+                co_await _client->request<http::verb::patch>("https://httpbin.org/patch", headers, patch_str);
 
             EXPECT_FALSE(ec4) << "PATCH request failed: " << ec4.message();
             EXPECT_EQ(response4.result(), http::status::ok);
@@ -95,15 +95,12 @@ TEST_F(AsyncRestClientIntegrationTest, ConcurrentAllVerbsRequests)
             std::string    post_str  = post_body.dump();
             std::string    patch_str = patch_body.dump();
 
-            // Create all awaitables first (queues them concurrently)
-            auto get_awaitable = _client->get<http::string_body>("https://httpbin.org/get?concurrent=get");
-            auto post_awaitable =
-                _client->post<http::string_body, http::string_body>("https://httpbin.org/post", headers, post_str);
-            auto delete_awaitable = _client->delete_<http::string_body>("https://httpbin.org/delete?concurrent=delete");
-            auto patch_awaitable =
-                _client->patch<http::string_body, http::string_body>("https://httpbin.org/patch", headers, patch_str);
+            auto get_awaitable  = _client->request<http::verb::get>("https://httpbin.org/get?concurrent=get");
+            auto post_awaitable = _client->request<http::verb::post>("https://httpbin.org/post", headers, post_str);
+            auto delete_awaitable =
+                _client->request<http::verb::delete_>("https://httpbin.org/delete?concurrent=delete");
+            auto patch_awaitable = _client->request<http::verb::patch>("https://httpbin.org/patch", headers, patch_str);
 
-            // Then await them (they execute concurrently)
             auto [ec1, response1] = co_await std::move(get_awaitable);
             auto [ec2, response2] = co_await std::move(post_awaitable);
             auto [ec3, response3] = co_await std::move(delete_awaitable);
@@ -148,20 +145,20 @@ TEST_F(AsyncRestClientIntegrationTest, MixedHostRequests)
             std::string    body_str = body.dump();
 
             // Request to httpbin.org
-            auto [ec1, response1] = co_await _client->post<http::string_body, http::string_body>(
-                "https://httpbin.org/post", headers, body_str);
+            auto [ec1, response1] =
+                co_await _client->request<http::verb::post>("https://httpbin.org/post", headers, body_str);
 
             EXPECT_FALSE(ec1) << "First mixed host POST failed: " << ec1.message();
             EXPECT_EQ(response1.result(), http::status::ok);
 
             // Request to different host (postman-echo.com)
-            auto [ec2, response2] = co_await _client->delete_<http::string_body>("https://postman-echo.com/delete");
+            auto [ec2, response2] = co_await _client->request<http::verb::delete_>("https://postman-echo.com/delete");
 
             EXPECT_FALSE(ec2) << "Second mixed host DELETE failed: " << ec2.message();
             EXPECT_EQ(response2.result(), http::status::ok);
 
             // Back to httpbin.org
-            auto [ec3, response3] = co_await _client->get<http::string_body>("https://httpbin.org/get");
+            auto [ec3, response3] = co_await _client->request<http::verb::get>("https://httpbin.org/get");
 
             EXPECT_FALSE(ec3) << "Third mixed host GET failed: " << ec3.message();
             EXPECT_EQ(response3.result(), http::status::ok);
@@ -190,21 +187,21 @@ TEST_F(AsyncRestClientIntegrationTest, AllVerbsErrorHandling404)
             headers.set(http::field::content_type, "application/json");
             std::string body = R"({"test": "404"})";
 
-            auto [ec1, response1] = co_await _client->get<http::string_body>("https://httpbin.org/status/404");
+            auto [ec1, response1] = co_await _client->request<http::verb::get>("https://httpbin.org/status/404");
             EXPECT_FALSE(ec1) << "GET request failed: " << ec1.message();
             EXPECT_EQ(response1.result(), http::status::not_found);
 
-            auto [ec2, response2] = co_await _client->post<http::string_body, http::string_body>(
-                "https://httpbin.org/status/404", headers, body);
+            auto [ec2, response2] =
+                co_await _client->request<http::verb::post>("https://httpbin.org/status/404", headers, body);
             EXPECT_FALSE(ec2) << "POST request failed: " << ec2.message();
             EXPECT_EQ(response2.result(), http::status::not_found);
 
-            auto [ec3, response3] = co_await _client->delete_<http::string_body>("https://httpbin.org/status/404");
+            auto [ec3, response3] = co_await _client->request<http::verb::delete_>("https://httpbin.org/status/404");
             EXPECT_FALSE(ec3) << "DELETE request failed: " << ec3.message();
             EXPECT_EQ(response3.result(), http::status::not_found);
 
-            auto [ec4, response4] = co_await _client->patch<http::string_body, http::string_body>(
-                "https://httpbin.org/status/404", headers, body);
+            auto [ec4, response4] =
+                co_await _client->request<http::verb::patch>("https://httpbin.org/status/404", headers, body);
             EXPECT_FALSE(ec4) << "PATCH request failed: " << ec4.message();
             EXPECT_EQ(response4.result(), http::status::not_found);
         },
@@ -225,18 +222,18 @@ TEST_F(AsyncRestClientIntegrationTest, AllVerbsErrorHandlingInvalidHost)
             std::string body = R"({"test": "invalid_host"})";
 
             auto [ec1, response1] =
-                co_await _client->get<http::string_body>("https://this-host-does-not-exist-12345.com/get");
+                co_await _client->request<http::verb::get>("https://this-host-does-not-exist-12345.com/get");
             EXPECT_TRUE(ec1) << "Expected error for invalid host but got success";
 
-            auto [ec2, response2] = co_await _client->post<http::string_body, http::string_body>(
+            auto [ec2, response2] = co_await _client->request<http::verb::post>(
                 "https://this-host-does-not-exist-12345.com/post", headers, body);
             EXPECT_TRUE(ec2) << "Expected error for invalid host but got success";
 
             auto [ec3, response3] =
-                co_await _client->delete_<http::string_body>("https://this-host-does-not-exist-12345.com/delete");
+                co_await _client->request<http::verb::delete_>("https://this-host-does-not-exist-12345.com/delete");
             EXPECT_TRUE(ec3) << "Expected error for invalid host but got success";
 
-            auto [ec4, response4] = co_await _client->patch<http::string_body, http::string_body>(
+            auto [ec4, response4] = co_await _client->request<http::verb::patch>(
                 "https://this-host-does-not-exist-12345.com/patch", headers, body);
             EXPECT_TRUE(ec4) << "Expected error for invalid host but got success";
         },
