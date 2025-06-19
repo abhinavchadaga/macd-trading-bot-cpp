@@ -3,7 +3,9 @@
 //
 
 #pragma once
+#include "account.hpp"
 #include "async_rest_client/async_rest_client.hpp"
+#include "orders.hpp"
 
 #include <boost/beast/http.hpp>
 #include <expected>
@@ -60,12 +62,23 @@ public:
 
     //
     // /account
-    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> account() const;
+
+    [[nodiscard]] net::awaitable<std::expected<trade_account, alpaca_api_error>> account() const;
 
     //
     // /positions
 
-    net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> all_open_positions() const;
+    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> all_open_positions() const;
+    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>>
+        close_all_positions(bool cancel_orders = true) const;
+
+    //
+    // /orders
+
+    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> get_all_orders() const;
+    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> delete_all_orders() const;
+    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>>
+        create_order(const notional_order& order) const;
 
 private:
     explicit alpaca_trade_client(net::io_context& ioc, config cfg);

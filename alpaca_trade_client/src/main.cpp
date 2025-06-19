@@ -1,3 +1,4 @@
+#include "alpaca_trade_client/account.hpp"
 #include "alpaca_trade_client/alpaca_trade_client.hpp"
 
 #include <iostream>
@@ -12,22 +13,18 @@ int main()
         ioc.get_executor(),
         [trade_client]() -> net::awaitable<void>
         {
+            std::string buying_power{};
             if (auto result = co_await trade_client->account())
             {
-                const std::string effective_buying_power{result.value()["effective_buying_power"]};
-                std::cout << "Account info: $" << effective_buying_power << " " << std::endl;
-            }
-            else
-            {
-                const auto& error = result.error();
-                std::cerr << "Error: " << error.message() << " (HTTP status: " << error.http_status() << ")"
-                          << std::endl;
-            }
-
-            if (auto result = co_await trade_client->all_open_positions())
-            {
-                const std::size_t num_open_pos{result.value().size()};
-                std::cout << "number of open positions: " << num_open_pos << std::endl;
+                if (const auto& account{result.value()}; account.buying_power.has_value())
+                {
+                    buying_power = account.buying_power.value();
+                    std::cout << "Buying Power: $" << buying_power << std::endl;
+                }
+                else
+                {
+                    std::cout << "Buying power not available" << std::endl;
+                }
             }
             else
             {
