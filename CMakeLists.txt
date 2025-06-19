@@ -12,6 +12,7 @@ find_package(GTest CONFIG REQUIRED)
 include_directories(include)
 add_subdirectory(src)
 add_subdirectory(async_rest_client)
+add_subdirectory(alpaca_trade_client)
 add_subdirectory(logger)
 
 enable_testing()
