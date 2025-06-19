@@ -8,6 +8,7 @@
 #include <boost/beast/http.hpp>
 #include <expected>
 #include <memory>
+#include <nlohmann/json.hpp>
 
 namespace net = boost::asio;
 
@@ -57,7 +58,14 @@ public:
 
     static std::shared_ptr<alpaca_trade_client> create(net::io_context& ioc, config config);
 
-    [[nodiscard]] net::awaitable<std::expected<std::string, alpaca_api_error>> effective_buying_power() const;
+    //
+    // /account
+    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> account() const;
+
+    //
+    // /positions
+
+    net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> all_open_positions() const;
 
 private:
     explicit alpaca_trade_client(net::io_context& ioc, config cfg);

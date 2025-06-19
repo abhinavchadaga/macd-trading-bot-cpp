@@ -63,7 +63,7 @@ std::shared_ptr<alpaca_trade_client> alpaca_trade_client::create(net::io_context
 {
     return std::shared_ptr<alpaca_trade_client>(new alpaca_trade_client{ioc, std::move(config)});
 }
-net::awaitable<std::expected<std::string, alpaca_api_error>> alpaca_trade_client::effective_buying_power() const
+net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_trade_client::account() const
 {
     auto [ec, res]{
         co_await _rest_client->request<http::verb::get>(_cfg.base_url() + "/account", create_auth_headers())};
@@ -81,9 +81,35 @@ net::awaitable<std::expected<std::string, alpaca_api_error>> alpaca_trade_client
 
     try
     {
-        const auto        json_body{nlohmann::json::parse(res.body())};
-        const std::string effective_buying_power{json_body["effective_buying_power"]};
-        co_return effective_buying_power;
+        const auto account_info{nlohmann::json::parse(res.body())};
+        co_return account_info;
+    }
+    catch (const nlohmann::json::exception& e)
+    {
+        co_return std::unexpected{
+            alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
+    }
+}
+net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_trade_client::all_open_positions() const
+{
+    auto [ec, res]{
+        co_await _rest_client->request<http::verb::get>(_cfg.base_url() + "/positions", create_auth_headers())};
+
+    if (ec)
+    {
+        co_return std::unexpected{alpaca_api_error{alpaca_api_error::error_type::network_error, 0, ec.message()}};
+    }
+
+    if (res.result() != http::status::ok)
+    {
+        co_return std::unexpected{
+            alpaca_api_error{alpaca_api_error::error_type::http_error, static_cast<int>(res.result()), res.body()}};
+    }
+
+    try
+    {
+        const auto account_info{nlohmann::json::parse(res.body())};
+        co_return account_info;
     }
     catch (const nlohmann::json::exception& e)
     {
