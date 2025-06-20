@@ -1,6 +1,5 @@
 #include "alpaca_trade_client/alpaca_trade_client.hpp"
 #include "nlohmann/json.hpp"
-#include <iostream>
 
 //
 // alpaca_api_error class
@@ -187,23 +186,14 @@ net::awaitable<std::expected<ReturnType, alpaca_api_error>> alpaca_trade_client:
 
     try
     {
-        const auto& body_str = res.body();
+        // const auto& body_str = res.body();
+        //
+        // // Use explicit iterator-based parsing to work around GCC/Clang differences
+        // nlohmann::json response_json;
+        // auto iter = body_str.cbegin();
+        // response_json = nlohmann::json::parse(iter, body_str.cend());
 
-        // Debug: Log body characteristics
-        std::cout << "DEBUG: Body size: " << body_str.size() << std::endl;
-        std::cout << "DEBUG: First char: '" << (body_str.empty() ? '?' : body_str[0]) << "'" << std::endl;
-        std::cout << "DEBUG: Last char: '" << (body_str.empty() ? '?' : body_str.back()) << "'" << std::endl;
-        std::cout << "DEBUG: First 50 chars: " << body_str.substr(0, 50) << std::endl;
-
-        const auto response_json{nlohmann::json::parse(body_str)};
-
-        std::cout << "DEBUG: JSON type: "
-                  << (response_json.is_object()  ? "object"
-                      : response_json.is_array() ? "array"
-                                                 : "other")
-                  << std::endl;
-
-        const ReturnType result = response_json;
+        const ReturnType result = nlohmann::json::parse(res.body());
         co_return result;
     }
     catch (const nlohmann::json::exception& e)
