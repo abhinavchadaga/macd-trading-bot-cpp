@@ -186,13 +186,6 @@ net::awaitable<std::expected<ReturnType, alpaca_api_error>> alpaca_trade_client:
 
     try
     {
-        // const auto& body_str = res.body();
-        //
-        // // Use explicit iterator-based parsing to work around GCC/Clang differences
-        // nlohmann::json response_json;
-        // auto iter = body_str.cbegin();
-        // response_json = nlohmann::json::parse(iter, body_str.cend());
-
         const ReturnType result = nlohmann::json::parse(res.body());
         co_return result;
     }
