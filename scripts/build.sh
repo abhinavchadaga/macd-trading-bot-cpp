@@ -11,7 +11,7 @@ source "$SCRIPT_DIR/logging.sh"
 # Change to project root to ensure relative paths work correctly
 cd "$PROJECT_ROOT"
 
-buildType="Debug"
+buildType="debug"
 target="all"
 configureFlags=""
 skipConfigure=false

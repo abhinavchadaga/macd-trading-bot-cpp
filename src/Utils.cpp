@@ -3,7 +3,6 @@
 #include "Bar.hpp"
 
 #include <chrono>
-#include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <sstream>

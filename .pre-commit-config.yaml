@@ -20,6 +20,7 @@ repos:
             test,
             optional-scope,
             dev,
+            debug
           ]
 
   # General hooks

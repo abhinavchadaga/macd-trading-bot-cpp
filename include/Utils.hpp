@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Bar.hpp"
+#include <vector>
 
 Bar1min::Timestamp parseRFC3339UTCTimestamp(const std::string& timestamp);
 
