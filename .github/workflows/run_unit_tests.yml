@@ -19,7 +19,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake clang build-essential libssl-dev nlohmann-json3-dev libgtest-dev ninja-build wget libspdlog-dev clang
+          sudo apt-get install -y cmake clang build-essential libssl-dev nlohmann-json3-dev libgtest-dev ninja-build wget libspdlog-dev
 
       - name: Fix permissions before Boost cache
         run: |
@@ -73,4 +73,4 @@ jobs:
           sudo make install
 
       - name: Build and run unit tests
-        run: ./scripts/run_tests.sh -t Release --install-utils --configure-flags "-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang"
+        run: ./scripts/run_tests.sh -t Release --install-utils
