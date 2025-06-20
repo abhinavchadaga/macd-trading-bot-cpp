@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
+#include <boost/json.hpp>
 #include <optional>
 #include <string>
 
@@ -69,8 +69,8 @@ struct trade_account
     std::optional<bool>        shorting_enabled{};
 };
 
-void to_json(nlohmann::json& j, const account_status& status);
-void from_json(const nlohmann::json& j, account_status& status);
+void           tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const account_status& status);
+account_status tag_invoke(boost::json::value_to_tag<account_status>, const boost::json::value& jv);
 
-void from_json(const nlohmann::json& j, trade_account& account);
-void to_json(nlohmann::json& j, const trade_account& account);
+void          tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const trade_account& account);
+trade_account tag_invoke(boost::json::value_to_tag<trade_account>, const boost::json::value& jv);

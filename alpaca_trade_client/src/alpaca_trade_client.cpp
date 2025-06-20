@@ -1,5 +1,5 @@
 #include "alpaca_trade_client/alpaca_trade_client.hpp"
-#include "nlohmann/json.hpp"
+#include <boost/json.hpp>
 
 //
 // alpaca_api_error class
@@ -94,13 +94,13 @@ net::awaitable<std::expected<std::vector<order_deleted>, alpaca_api_error>>
 
 net::awaitable<std::expected<order, alpaca_api_error>> alpaca_trade_client::create_order(const notional_order& no) const
 {
-    const nlohmann::json no_json = no;
+    const auto no_json = json::value_from(no);
 
     http::fields extra_headers;
     extra_headers.set(http::field::content_type, "application/json");
 
     co_return co_await make_api_request<http::verb::post, order>(
-        "/orders", no_json.dump(), http::status::ok, extra_headers);
+        "/orders", json::serialize(no_json), http::status::ok, extra_headers);
 }
 
 //
@@ -186,12 +186,19 @@ net::awaitable<std::expected<ReturnType, alpaca_api_error>> alpaca_trade_client:
 
     try
     {
-        const ReturnType result = nlohmann::json::parse(res.body());
+        auto             json_value = json::parse(res.body());
+        const ReturnType result     = json::value_to<ReturnType>(json_value);
         co_return result;
     }
-    catch (const nlohmann::json::exception& e)
+    catch (const boost::system::system_error& e)
     {
         const std::string error_msg = std::string(e.what()) + " | Response body: " + res.body();
+        co_return std::unexpected{alpaca_api_error{
+            alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), error_msg}};
+    }
+    catch (const std::exception& e)
+    {
+        const std::string error_msg = std::string("Unexpected error: ") + e.what() + " | Response body: " + res.body();
         co_return std::unexpected{alpaca_api_error{
             alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), error_msg}};
     }
