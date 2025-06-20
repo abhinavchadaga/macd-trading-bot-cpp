@@ -111,7 +111,7 @@ struct order
 struct position_closed
 {
     std::string symbol{};
-    std::string status{};
+    int         status{};
     order       order_details{};
 };
 

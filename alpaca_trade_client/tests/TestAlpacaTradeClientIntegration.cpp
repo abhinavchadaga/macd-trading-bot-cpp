@@ -48,16 +48,9 @@ TEST_F(AlpacaTradeClientIntegrationTest, FullTradingWorkflow)
             auto account_result = co_await _client->account();
             EXPECT_TRUE(account_result.has_value()) << "Failed to get account: " << account_result.error().message();
 
-            if (!account_result.has_value())
-                co_return;
-
             const auto& account = account_result.value();
             EXPECT_FALSE(account.id.empty()) << "Account ID should not be empty";
             EXPECT_TRUE(account.buying_power.has_value()) << "Buying power should be available";
-
-            if (!account.buying_power.has_value())
-                co_return;
-
             const auto& buying_power_str = account.buying_power.value();
             EXPECT_FALSE(buying_power_str.empty()) << "Buying power should not be empty";
 
@@ -168,7 +161,7 @@ TEST_F(AlpacaTradeClientIntegrationTest, FullTradingWorkflow)
                         if (closed.symbol == "PLTR")
                         {
                             found_closed = true;
-                            EXPECT_FALSE(closed.status.empty()) << "Closure status should not be empty";
+                            EXPECT_NE(closed.status, 0) << "Closure status should not be zero";
                             break;
                         }
                     }
@@ -178,8 +171,7 @@ TEST_F(AlpacaTradeClientIntegrationTest, FullTradingWorkflow)
 
             //
             // Final verification: should have no positions or orders for PLTR
-
-            co_await net::steady_timer(_ioc, std::chrono::milliseconds(500)).async_wait(net::use_awaitable);
+            co_await net::steady_timer(_ioc, std::chrono::milliseconds(2000)).async_wait(net::use_awaitable);
 
             if (auto final_orders_result = co_await _client->get_all_orders(); final_orders_result.has_value())
             {
