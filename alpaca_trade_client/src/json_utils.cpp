@@ -1,4 +1,5 @@
 #include "alpaca_trade_client/account.hpp"
+#include "alpaca_trade_client/enum_serialization.hpp"
 #include "alpaca_trade_client/orders.hpp"
 #include "alpaca_trade_client/position.hpp"
 
@@ -10,120 +11,12 @@ namespace json = boost::json;
 
 void tag_invoke(json::value_from_tag, json::value& jv, const account_status& status)
 {
-    switch (status)
-    {
-        case account_status::ACCOUNT_CLOSED:
-            jv = "ACCOUNT_CLOSED";
-            break;
-        case account_status::ACCOUNT_UPDATED:
-            jv = "ACCOUNT_UPDATED";
-            break;
-        case account_status::ACTION_REQUIRED:
-            jv = "ACTION_REQUIRED";
-            break;
-        case account_status::ACTIVE:
-            jv = "ACTIVE";
-            break;
-        case account_status::AML_REVIEW:
-            jv = "AML_REVIEW";
-            break;
-        case account_status::APPROVAL_PENDING:
-            jv = "APPROVAL_PENDING";
-            break;
-        case account_status::APPROVED:
-            jv = "APPROVED";
-            break;
-        case account_status::DISABLED:
-            jv = "DISABLED";
-            break;
-        case account_status::DISABLE_PENDING:
-            jv = "DISABLE_PENDING";
-            break;
-        case account_status::EDITED:
-            jv = "EDITED";
-            break;
-        case account_status::INACTIVE:
-            jv = "INACTIVE";
-            break;
-        case account_status::KYC_SUBMITTED:
-            jv = "KYC_SUBMITTED";
-            break;
-        case account_status::LIMITED:
-            jv = "LIMITED";
-            break;
-        case account_status::ONBOARDING:
-            jv = "ONBOARDING";
-            break;
-        case account_status::PAPER_ONLY:
-            jv = "PAPER_ONLY";
-            break;
-        case account_status::REAPPROVAL_PENDING:
-            jv = "REAPPROVAL_PENDING";
-            break;
-        case account_status::REJECTED:
-            jv = "REJECTED";
-            break;
-        case account_status::RESUBMITTED:
-            jv = "RESUBMITTED";
-            break;
-        case account_status::SIGNED_UP:
-            jv = "SIGNED_UP";
-            break;
-        case account_status::SUBMISSION_FAILED:
-            jv = "SUBMISSION_FAILED";
-            break;
-        case account_status::SUBMITTED:
-            jv = "SUBMITTED";
-            break;
-    }
+    enum_value_from_tag(jv, status);
 }
 
 account_status tag_invoke(json::value_to_tag<account_status>, const json::value& jv)
 {
-    const std::string status_str = json::value_to<std::string>(jv);
-    if (status_str == "ACCOUNT_CLOSED")
-        return account_status::ACCOUNT_CLOSED;
-    if (status_str == "ACCOUNT_UPDATED")
-        return account_status::ACCOUNT_UPDATED;
-    if (status_str == "ACTION_REQUIRED")
-        return account_status::ACTION_REQUIRED;
-    if (status_str == "ACTIVE")
-        return account_status::ACTIVE;
-    if (status_str == "AML_REVIEW")
-        return account_status::AML_REVIEW;
-    if (status_str == "APPROVAL_PENDING")
-        return account_status::APPROVAL_PENDING;
-    if (status_str == "APPROVED")
-        return account_status::APPROVED;
-    if (status_str == "DISABLED")
-        return account_status::DISABLED;
-    if (status_str == "DISABLE_PENDING")
-        return account_status::DISABLE_PENDING;
-    if (status_str == "EDITED")
-        return account_status::EDITED;
-    if (status_str == "INACTIVE")
-        return account_status::INACTIVE;
-    if (status_str == "KYC_SUBMITTED")
-        return account_status::KYC_SUBMITTED;
-    if (status_str == "LIMITED")
-        return account_status::LIMITED;
-    if (status_str == "ONBOARDING")
-        return account_status::ONBOARDING;
-    if (status_str == "PAPER_ONLY")
-        return account_status::PAPER_ONLY;
-    if (status_str == "REAPPROVAL_PENDING")
-        return account_status::REAPPROVAL_PENDING;
-    if (status_str == "REJECTED")
-        return account_status::REJECTED;
-    if (status_str == "RESUBMITTED")
-        return account_status::RESUBMITTED;
-    if (status_str == "SIGNED_UP")
-        return account_status::SIGNED_UP;
-    if (status_str == "SUBMISSION_FAILED")
-        return account_status::SUBMISSION_FAILED;
-    if (status_str == "SUBMITTED")
-        return account_status::SUBMITTED;
-    throw std::invalid_argument("Invalid account_status: " + status_str);
+    return enum_value_to_tag<account_status>(jv);
 }
 
 trade_account tag_invoke(json::value_to_tag<trade_account>, const json::value& jv)
@@ -288,131 +181,32 @@ void tag_invoke(json::value_from_tag, json::value& jv, const trade_account& acco
 
 void tag_invoke(json::value_from_tag, json::value& jv, const asset_exchange& exchange)
 {
-    switch (exchange)
-    {
-        case asset_exchange::AMEX:
-            jv = "AMEX";
-            break;
-        case asset_exchange::ARCA:
-            jv = "ARCA";
-            break;
-        case asset_exchange::BATS:
-            jv = "BATS";
-            break;
-        case asset_exchange::NYSE:
-            jv = "NYSE";
-            break;
-        case asset_exchange::NASDAQ:
-            jv = "NASDAQ";
-            break;
-        case asset_exchange::NYSEARCA:
-            jv = "NYSEARCA";
-            break;
-        case asset_exchange::OTC:
-            jv = "OTC";
-            break;
-        case asset_exchange::FTXU:
-            jv = "FTXU";
-            break;
-        case asset_exchange::CBSE:
-            jv = "CBSE";
-            break;
-        case asset_exchange::GNSS:
-            jv = "GNSS";
-            break;
-        case asset_exchange::ERSX:
-            jv = "ERSX";
-            break;
-        case asset_exchange::CRYPTO:
-            jv = "CRYPTO";
-            break;
-        case asset_exchange::EMPTY:
-            jv = "";
-            break;
-    }
+    enum_value_from_tag(jv, exchange);
 }
 
 asset_exchange tag_invoke(json::value_to_tag<asset_exchange>, const json::value& jv)
 {
-    const std::string exchange_str = json::value_to<std::string>(jv);
-    if (exchange_str == "AMEX")
-        return asset_exchange::AMEX;
-    if (exchange_str == "ARCA")
-        return asset_exchange::ARCA;
-    if (exchange_str == "BATS")
-        return asset_exchange::BATS;
-    if (exchange_str == "NYSE")
-        return asset_exchange::NYSE;
-    if (exchange_str == "NASDAQ")
-        return asset_exchange::NASDAQ;
-    if (exchange_str == "NYSEARCA")
-        return asset_exchange::NYSEARCA;
-    if (exchange_str == "OTC")
-        return asset_exchange::OTC;
-    if (exchange_str == "FTXU")
-        return asset_exchange::FTXU;
-    if (exchange_str == "CBSE")
-        return asset_exchange::CBSE;
-    if (exchange_str == "GNSS")
-        return asset_exchange::GNSS;
-    if (exchange_str == "ERSX")
-        return asset_exchange::ERSX;
-    if (exchange_str == "CRYPTO")
-        return asset_exchange::CRYPTO;
-    if (exchange_str == "")
-        return asset_exchange::EMPTY;
-    throw std::invalid_argument("Invalid asset_exchange: " + exchange_str);
+    return enum_value_to_tag<asset_exchange>(jv);
 }
 
 void tag_invoke(json::value_from_tag, json::value& jv, const asset_class& asset_class_type)
 {
-    switch (asset_class_type)
-    {
-        case asset_class::US_EQUITY:
-            jv = "us_equity";
-            break;
-        case asset_class::US_OPTION:
-            jv = "us_option";
-            break;
-        case asset_class::CRYPTO:
-            jv = "crypto";
-            break;
-    }
+    enum_value_from_tag(jv, asset_class_type);
 }
 
 asset_class tag_invoke(json::value_to_tag<asset_class>, const json::value& jv)
 {
-    const std::string class_str = json::value_to<std::string>(jv);
-    if (class_str == "us_equity")
-        return asset_class::US_EQUITY;
-    if (class_str == "us_option")
-        return asset_class::US_OPTION;
-    if (class_str == "crypto")
-        return asset_class::CRYPTO;
-    throw std::invalid_argument("Invalid asset_class: " + class_str);
+    return enum_value_to_tag<asset_class>(jv);
 }
 
 void tag_invoke(json::value_from_tag, json::value& jv, const position_side& side)
 {
-    switch (side)
-    {
-        case position_side::LONG:
-            jv = "long";
-            break;
-        case position_side::SHORT:
-            jv = "short";
-            break;
-    }
+    enum_value_from_tag(jv, side);
 }
 
 position_side tag_invoke(json::value_to_tag<position_side>, const json::value& jv)
 {
-    const std::string side_str = json::value_to<std::string>(jv);
-    if (side_str == "long")
-        return position_side::LONG;
-    if (side_str == "short")
-        return position_side::SHORT;
-    throw std::invalid_argument("Invalid position_side: " + side_str);
+    return enum_value_to_tag<position_side>(jv);
 }
 
 position tag_invoke(json::value_to_tag<position>, const json::value& jv)
@@ -477,270 +271,62 @@ void tag_invoke(json::value_from_tag, json::value& jv, const position& pos)
 
 void tag_invoke(json::value_from_tag, json::value& jv, const order_side& side)
 {
-    switch (side)
-    {
-        case order_side::BUY:
-            jv = "buy";
-            break;
-        case order_side::SELL:
-            jv = "sell";
-            break;
-    }
+    enum_value_from_tag(jv, side);
 }
 
 order_side tag_invoke(json::value_to_tag<order_side>, const json::value& jv)
 {
-    const std::string side_str = json::value_to<std::string>(jv);
-    if (side_str == "buy")
-        return order_side::BUY;
-    if (side_str == "sell")
-        return order_side::SELL;
-    throw std::invalid_argument("Invalid order_side: " + side_str);
+    return enum_value_to_tag<order_side>(jv);
 }
 
 void tag_invoke(json::value_from_tag, json::value& jv, const order_class& oc)
 {
-    switch (oc)
-    {
-        case order_class::SIMPLE:
-            jv = "simple";
-            break;
-        case order_class::BRACKET:
-            jv = "bracket";
-            break;
-        case order_class::OCO:
-            jv = "oco";
-            break;
-        case order_class::OTO:
-            jv = "oto";
-            break;
-        case order_class::MLEG:
-            jv = "mleg";
-            break;
-    }
+    enum_value_from_tag(jv, oc);
 }
 
 order_class tag_invoke(json::value_to_tag<order_class>, const json::value& jv)
 {
-    const std::string class_str = json::value_to<std::string>(jv);
-    if (class_str == "simple" || class_str.empty())
-        return order_class::SIMPLE;
-    if (class_str == "bracket")
-        return order_class::BRACKET;
-    if (class_str == "oco")
-        return order_class::OCO;
-    if (class_str == "oto")
-        return order_class::OTO;
-    if (class_str == "mleg")
-        return order_class::MLEG;
-    throw std::invalid_argument("Invalid order_class: " + class_str);
+    return enum_value_to_tag_with_fallback<order_class>(jv, order_class::SIMPLE);
 }
 
 void tag_invoke(json::value_from_tag, json::value& jv, const order_type& ot)
 {
-    switch (ot)
-    {
-        case order_type::MARKET:
-            jv = "market";
-            break;
-        case order_type::LIMIT:
-            jv = "limit";
-            break;
-        case order_type::STOP:
-            jv = "stop";
-            break;
-        case order_type::STOP_LIMIT:
-            jv = "stop_limit";
-            break;
-        case order_type::TRAILING_STOP:
-            jv = "trailing_stop";
-            break;
-    }
+    enum_value_from_tag(jv, ot);
 }
 
 order_type tag_invoke(json::value_to_tag<order_type>, const json::value& jv)
 {
-    const std::string type_str = json::value_to<std::string>(jv);
-    if (type_str == "market")
-        return order_type::MARKET;
-    if (type_str == "limit")
-        return order_type::LIMIT;
-    if (type_str == "stop")
-        return order_type::STOP;
-    if (type_str == "stop_limit")
-        return order_type::STOP_LIMIT;
-    if (type_str == "trailing_stop")
-        return order_type::TRAILING_STOP;
-    throw std::invalid_argument("Invalid order_type: " + type_str);
+    return enum_value_to_tag<order_type>(jv);
 }
 
 void tag_invoke(json::value_from_tag, json::value& jv, const time_in_force& tif)
 {
-    switch (tif)
-    {
-        case time_in_force::DAY:
-            jv = "day";
-            break;
-        case time_in_force::GTC:
-            jv = "gtc";
-            break;
-        case time_in_force::OPG:
-            jv = "opg";
-            break;
-        case time_in_force::CLS:
-            jv = "cls";
-            break;
-        case time_in_force::IOC:
-            jv = "ioc";
-            break;
-        case time_in_force::FOK:
-            jv = "fok";
-            break;
-    }
+    enum_value_from_tag(jv, tif);
 }
 
 time_in_force tag_invoke(json::value_to_tag<time_in_force>, const json::value& jv)
 {
-    const std::string tif_str = json::value_to<std::string>(jv);
-    if (tif_str == "day")
-        return time_in_force::DAY;
-    if (tif_str == "gtc")
-        return time_in_force::GTC;
-    if (tif_str == "opg")
-        return time_in_force::OPG;
-    if (tif_str == "cls")
-        return time_in_force::CLS;
-    if (tif_str == "ioc")
-        return time_in_force::IOC;
-    if (tif_str == "fok")
-        return time_in_force::FOK;
-    throw std::invalid_argument("Invalid time_in_force: " + tif_str);
+    return enum_value_to_tag<time_in_force>(jv);
 }
 
 void tag_invoke(json::value_from_tag, json::value& jv, const order_status& os)
 {
-    switch (os)
-    {
-        case order_status::NEW:
-            jv = "new";
-            break;
-        case order_status::PARTIALLY_FILLED:
-            jv = "partially_filled";
-            break;
-        case order_status::FILLED:
-            jv = "filled";
-            break;
-        case order_status::DONE_FOR_DAY:
-            jv = "done_for_day";
-            break;
-        case order_status::CANCELED:
-            jv = "canceled";
-            break;
-        case order_status::EXPIRED:
-            jv = "expired";
-            break;
-        case order_status::REPLACED:
-            jv = "replaced";
-            break;
-        case order_status::PENDING_CANCEL:
-            jv = "pending_cancel";
-            break;
-        case order_status::PENDING_REPLACE:
-            jv = "pending_replace";
-            break;
-        case order_status::ACCEPTED:
-            jv = "accepted";
-            break;
-        case order_status::PENDING_NEW:
-            jv = "pending_new";
-            break;
-        case order_status::ACCEPTED_FOR_BIDDING:
-            jv = "accepted_for_bidding";
-            break;
-        case order_status::STOPPED:
-            jv = "stopped";
-            break;
-        case order_status::REJECTED:
-            jv = "rejected";
-            break;
-        case order_status::SUSPENDED:
-            jv = "suspended";
-            break;
-        case order_status::CALCULATED:
-            jv = "calculated";
-            break;
-    }
+    enum_value_from_tag(jv, os);
 }
 
 order_status tag_invoke(json::value_to_tag<order_status>, const json::value& jv)
 {
-    const std::string status_str = json::value_to<std::string>(jv);
-    if (status_str == "new")
-        return order_status::NEW;
-    if (status_str == "partially_filled")
-        return order_status::PARTIALLY_FILLED;
-    if (status_str == "filled")
-        return order_status::FILLED;
-    if (status_str == "done_for_day")
-        return order_status::DONE_FOR_DAY;
-    if (status_str == "canceled")
-        return order_status::CANCELED;
-    if (status_str == "expired")
-        return order_status::EXPIRED;
-    if (status_str == "replaced")
-        return order_status::REPLACED;
-    if (status_str == "pending_cancel")
-        return order_status::PENDING_CANCEL;
-    if (status_str == "pending_replace")
-        return order_status::PENDING_REPLACE;
-    if (status_str == "accepted")
-        return order_status::ACCEPTED;
-    if (status_str == "pending_new")
-        return order_status::PENDING_NEW;
-    if (status_str == "accepted_for_bidding")
-        return order_status::ACCEPTED_FOR_BIDDING;
-    if (status_str == "stopped")
-        return order_status::STOPPED;
-    if (status_str == "rejected")
-        return order_status::REJECTED;
-    if (status_str == "suspended")
-        return order_status::SUSPENDED;
-    if (status_str == "calculated")
-        return order_status::CALCULATED;
-    throw std::invalid_argument("Invalid order_status: " + status_str);
+    return enum_value_to_tag<order_status>(jv);
 }
 
 void tag_invoke(json::value_from_tag, json::value& jv, const position_intent& pi)
 {
-    switch (pi)
-    {
-        case position_intent::BUY_TO_OPEN:
-            jv = "buy_to_open";
-            break;
-        case position_intent::BUY_TO_CLOSE:
-            jv = "buy_to_close";
-            break;
-        case position_intent::SELL_TO_OPEN:
-            jv = "sell_to_open";
-            break;
-        case position_intent::SELL_TO_CLOSE:
-            jv = "sell_to_close";
-            break;
-    }
+    enum_value_from_tag(jv, pi);
 }
 
 position_intent tag_invoke(json::value_to_tag<position_intent>, const json::value& jv)
 {
-    const std::string intent_str = json::value_to<std::string>(jv);
-    if (intent_str == "buy_to_open")
-        return position_intent::BUY_TO_OPEN;
-    if (intent_str == "buy_to_close")
-        return position_intent::BUY_TO_CLOSE;
-    if (intent_str == "sell_to_open")
-        return position_intent::SELL_TO_OPEN;
-    if (intent_str == "sell_to_close")
-        return position_intent::SELL_TO_CLOSE;
-    throw std::invalid_argument("Invalid position_intent: " + intent_str);
+    return enum_value_to_tag<position_intent>(jv);
 }
 
 order tag_invoke(json::value_to_tag<order>, const json::value& jv)
