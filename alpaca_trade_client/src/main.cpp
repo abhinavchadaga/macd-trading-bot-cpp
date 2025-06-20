@@ -40,11 +40,7 @@ int main()
 
             // Step 2: Place notional order for PLTR with full buying power
             notional_order pltr_order{
-                .symbol          = "PLTR",
-                .notional        = buying_power,
-                .side            = order_side::BUY,
-                .extended_hours  = false,
-                .client_order_id = "pltr_full_buying_power_order"};
+                .symbol = "PLTR", .notional = buying_power, .side = order_side::BUY, .extended_hours = false};
 
             std::cout << "Placing order for PLTR with $" << buying_power << " notional..." << std::endl;
 
