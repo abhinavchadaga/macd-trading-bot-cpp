@@ -66,180 +66,42 @@ std::shared_ptr<alpaca_trade_client> alpaca_trade_client::create(net::io_context
 
 net::awaitable<std::expected<trade_account, alpaca_api_error>> alpaca_trade_client::account() const
 {
-    auto [ec, res]{
-        co_await _rest_client->request<http::verb::get>(_cfg.base_url() + "/account", create_auth_headers())};
-
-    if (ec)
-    {
-        co_return std::unexpected{alpaca_api_error{alpaca_api_error::error_type::network_error, 0, ec.message()}};
-    }
-
-    if (res.result() != http::status::ok)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::http_error, static_cast<int>(res.result()), res.body()}};
-    }
-
-    try
-    {
-        const auto          account_json{nlohmann::json::parse(res.body())};
-        const trade_account account = account_json;
-        co_return account;
-    }
-    catch (const nlohmann::json::exception& e)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
-    }
+    co_return co_await make_api_request<http::verb::get, trade_account>("/account");
 }
 net::awaitable<std::expected<std::vector<position>, alpaca_api_error>> alpaca_trade_client::all_open_positions() const
 {
-    auto [ec, res]{
-        co_await _rest_client->request<http::verb::get>(_cfg.base_url() + "/positions", create_auth_headers())};
-
-    if (ec)
-    {
-        co_return std::unexpected{alpaca_api_error{alpaca_api_error::error_type::network_error, 0, ec.message()}};
-    }
-
-    if (res.result() != http::status::ok)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::http_error, static_cast<int>(res.result()), res.body()}};
-    }
-
-    try
-    {
-        const auto            positions_json{nlohmann::json::parse(res.body())};
-        std::vector<position> positions = positions_json;
-        co_return positions;
-    }
-    catch (const nlohmann::json::exception& e)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
-    }
+    co_return co_await make_api_request<http::verb::get, std::vector<position>>("/positions");
 }
 net::awaitable<std::expected<std::vector<position_closed>, alpaca_api_error>>
     alpaca_trade_client::close_all_positions(const bool cancel_orders) const
 {
-    const std::string url{_cfg.base_url() + "/positions?cancel_orders=" + (cancel_orders ? "true" : "false")};
-    auto [ec, res]{co_await _rest_client->request<http::verb::delete_>(url, create_auth_headers())};
-
-    if (ec)
-    {
-        co_return std::unexpected{alpaca_api_error{alpaca_api_error::error_type::network_error, 0, ec.message()}};
-    }
-
-    if (res.result() != http::status::multi_status)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::http_error, static_cast<int>(res.result()), res.body()}};
-    }
-
-    try
-    {
-        const auto                   close_results_json{nlohmann::json::parse(res.body())};
-        std::vector<position_closed> close_results = close_results_json;
-        co_return close_results;
-    }
-    catch (const nlohmann::json::exception& e)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
-    }
+    const std::string endpoint{
+        "/positions?cancel_orders=" + (cancel_orders ? std::string{"true"} : std::string{"false"})};
+    co_return co_await make_api_request<http::verb::delete_, std::vector<position_closed>>(
+        endpoint, http::status::multi_status);
 }
 
 net::awaitable<std::expected<std::vector<order>, alpaca_api_error>> alpaca_trade_client::get_all_orders() const
 {
-    auto [ec, res]{co_await _rest_client->request<http::verb::get>(_cfg.base_url() + "/orders", create_auth_headers())};
-
-    if (ec)
-    {
-        co_return std::unexpected{alpaca_api_error{alpaca_api_error::error_type::network_error, 0, ec.message()}};
-    }
-
-    if (res.result() != http::status::ok)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::http_error, static_cast<int>(res.result()), res.body()}};
-    }
-
-    try
-    {
-        const auto         orders_json{nlohmann::json::parse(res.body())};
-        std::vector<order> orders = orders_json;
-        co_return orders;
-    }
-    catch (const nlohmann::json::exception& e)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
-    }
+    co_return co_await make_api_request<http::verb::get, std::vector<order>>("/orders");
 }
 
 net::awaitable<std::expected<std::vector<order_deleted>, alpaca_api_error>>
     alpaca_trade_client::delete_all_orders() const
 {
-    auto [ec, res]{
-        co_await _rest_client->request<http::verb::delete_>(_cfg.base_url() + "/orders", create_auth_headers())};
-
-    if (ec)
-    {
-        co_return std::unexpected{alpaca_api_error{alpaca_api_error::error_type::network_error, 0, ec.message()}};
-    }
-
-    if (res.result() != http::status::multi_status)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::http_error, static_cast<int>(res.result()), res.body()}};
-    }
-
-    try
-    {
-        const auto                 cancellation_result_json{nlohmann::json::parse(res.body())};
-        std::vector<order_deleted> cancellation_result = cancellation_result_json;
-        co_return cancellation_result;
-    }
-    catch (const nlohmann::json::exception& e)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
-    }
+    co_return co_await make_api_request<http::verb::delete_, std::vector<order_deleted>>(
+        "/orders", http::status::multi_status);
 }
 
 net::awaitable<std::expected<order, alpaca_api_error>> alpaca_trade_client::create_order(const notional_order& no) const
 {
     const nlohmann::json no_json = no;
 
-    auto headers = create_auth_headers();
-    headers.set(http::field::content_type, "application/json");
+    http::fields extra_headers;
+    extra_headers.set(http::field::content_type, "application/json");
 
-    auto [ec, res]{
-        co_await _rest_client->request<http::verb::post>(_cfg.base_url() + "/orders", headers, no_json.dump())};
-
-    if (ec)
-    {
-        co_return std::unexpected{alpaca_api_error{alpaca_api_error::error_type::network_error, 0, ec.message()}};
-    }
-
-    if (res.result() != http::status::ok)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::http_error, static_cast<int>(res.result()), res.body()}};
-    }
-
-    try
-    {
-        const auto  response_json{nlohmann::json::parse(res.body())};
-        const order order = response_json;
-        co_return order;
-    }
-    catch (const nlohmann::json::exception& e)
-    {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
-    }
+    co_return co_await make_api_request<http::verb::post, order>(
+        "/orders", no_json.dump(), http::status::ok, extra_headers);
 }
 
 //
@@ -257,4 +119,81 @@ http::fields alpaca_trade_client::create_auth_headers() const
     headers.set("APCA-API-KEY-ID", _cfg.api_key());
     headers.set("APCA-API-SECRET-KEY", _cfg.api_secret());
     return headers;
+}
+
+// No body version
+template<http::verb Verb, typename ReturnType>
+net::awaitable<std::expected<ReturnType, alpaca_api_error>> alpaca_trade_client::make_api_request(
+    const std::string&                 endpoint,
+    const http::status                 expected_status,
+    const std::optional<http::fields>& extra_headers) const
+{
+    co_return co_await make_api_request_impl<Verb, ReturnType, false>(
+        endpoint, expected_status, std::nullopt, extra_headers);
+}
+
+// With body version
+template<http::verb Verb, typename ReturnType>
+net::awaitable<std::expected<ReturnType, alpaca_api_error>> alpaca_trade_client::make_api_request(
+    const std::string&                 endpoint,
+    const std::string&                 body,
+    http::status                       expected_status,
+    const std::optional<http::fields>& extra_headers) const
+{
+    co_return co_await make_api_request_impl<Verb, ReturnType, true>(endpoint, expected_status, body, extra_headers);
+}
+
+// Shared implementation
+template<http::verb Verb, typename ReturnType, bool HasBody>
+net::awaitable<std::expected<ReturnType, alpaca_api_error>> alpaca_trade_client::make_api_request_impl(
+    const std::string&                 endpoint,
+    http::status                       expected_status,
+    const std::optional<std::string>&  body,
+    const std::optional<http::fields>& extra_headers) const
+{
+    const std::string url{_cfg.base_url() + endpoint};
+    auto              headers = create_auth_headers();
+
+    if (extra_headers.has_value())
+    {
+        for (const auto& field : extra_headers.value())
+        {
+            headers.insert(field.name(), field.value());
+        }
+    }
+
+    auto [ec, res] = co_await [&]()
+    {
+        if constexpr (HasBody)
+        {
+            return _rest_client->request<Verb>(url, headers, body.value());
+        }
+        else
+        {
+            return _rest_client->request<Verb>(url, headers);
+        }
+    }();
+
+    if (ec)
+    {
+        co_return std::unexpected{alpaca_api_error{alpaca_api_error::error_type::network_error, 0, ec.message()}};
+    }
+
+    if (res.result() != expected_status)
+    {
+        co_return std::unexpected{
+            alpaca_api_error{alpaca_api_error::error_type::http_error, static_cast<int>(res.result()), res.body()}};
+    }
+
+    try
+    {
+        const auto       response_json{nlohmann::json::parse(res.body())};
+        const ReturnType result = response_json;
+        co_return result;
+    }
+    catch (const nlohmann::json::exception& e)
+    {
+        co_return std::unexpected{
+            alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
+    }
 }

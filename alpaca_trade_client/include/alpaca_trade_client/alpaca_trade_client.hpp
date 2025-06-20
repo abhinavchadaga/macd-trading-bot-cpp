@@ -86,6 +86,26 @@ private:
 
     [[nodiscard]] http::fields create_auth_headers() const;
 
+    template<http::verb Verb, typename ReturnType>
+    [[nodiscard]] net::awaitable<std::expected<ReturnType, alpaca_api_error>> make_api_request(
+        const std::string&                 endpoint,
+        http::status                       expected_status = http::status::ok,
+        const std::optional<http::fields>& extra_headers   = std::nullopt) const;
+
+    template<boost::beast::http::verb Verb, typename ReturnType>
+    [[nodiscard]] net::awaitable<std::expected<ReturnType, alpaca_api_error>> make_api_request(
+        const std::string&                 endpoint,
+        const std::string&                 body,
+        http::status                       expected_status = http::status::ok,
+        const std::optional<http::fields>& extra_headers   = std::nullopt) const;
+
+    template<http::verb Verb, typename ReturnType, bool HasBody>
+    [[nodiscard]] net::awaitable<std::expected<ReturnType, alpaca_api_error>> make_api_request_impl(
+        const std::string&                 endpoint,
+        http::status                       expected_status,
+        const std::optional<std::string>&  body,
+        const std::optional<http::fields>& extra_headers) const;
+
 private:
     config                                                _cfg;
     std::shared_ptr<async_rest_client::async_rest_client> _rest_client{};
