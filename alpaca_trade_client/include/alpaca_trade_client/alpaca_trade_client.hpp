@@ -9,12 +9,13 @@
 #include "position.hpp"
 
 #include <boost/beast/http.hpp>
+#include <boost/json.hpp>
 #include <expected>
 #include <memory>
-#include <nlohmann/json.hpp>
 #include <vector>
 
-namespace net = boost::asio;
+namespace net  = boost::asio;
+namespace json = boost::json;
 
 class alpaca_api_error
 {

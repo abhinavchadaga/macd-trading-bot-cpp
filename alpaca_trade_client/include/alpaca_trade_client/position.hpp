@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
+#include <boost/json.hpp>
 #include <optional>
 #include <string>
 
@@ -56,14 +56,14 @@ struct position
     bool                       asset_marginable{};
 };
 
-void to_json(nlohmann::json& j, const asset_exchange& exchange);
-void from_json(const nlohmann::json& j, asset_exchange& exchange);
+void           tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const asset_exchange& exchange);
+asset_exchange tag_invoke(boost::json::value_to_tag<asset_exchange>, const boost::json::value& jv);
 
-void to_json(nlohmann::json& j, const asset_class& asset_class_type);
-void from_json(const nlohmann::json& j, asset_class& asset_class_type);
+void        tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const asset_class& asset_class_type);
+asset_class tag_invoke(boost::json::value_to_tag<asset_class>, const boost::json::value& jv);
 
-void to_json(nlohmann::json& j, const position_side& side);
-void from_json(const nlohmann::json& j, position_side& side);
+void          tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const position_side& side);
+position_side tag_invoke(boost::json::value_to_tag<position_side>, const boost::json::value& jv);
 
-void from_json(const nlohmann::json& j, position& pos);
-void to_json(nlohmann::json& j, const position& pos);
+void     tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const position& pos);
+position tag_invoke(boost::json::value_to_tag<position>, const boost::json::value& jv);

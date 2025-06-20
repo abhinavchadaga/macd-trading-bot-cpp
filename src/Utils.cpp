@@ -32,15 +32,12 @@ Bar1min::Timestamp parseRFC3339UTCTimestamp(const std::string& timestamp)
         // Format: 2025-05-19T13:30:00Z
         return parse_helper(timestamp, "%Y-%m-%dT%H:%M:%S");
     }
-    else if (timestamp.ends_with("+00:00"))
+    if (timestamp.ends_with("+00:00"))
     {
         // Format: 2025-05-19 13:30:00+00:00
         return parse_helper(timestamp, "%Y-%m-%d %H:%M:%S");
     }
-    else
-    {
-        throw std::invalid_argument{"timestamp must be UTC (end with 'Z' or '+00:00')"};
-    }
+    throw std::invalid_argument{"timestamp must be UTC (end with 'Z' or '+00:00')"};
 
     return {};
 }

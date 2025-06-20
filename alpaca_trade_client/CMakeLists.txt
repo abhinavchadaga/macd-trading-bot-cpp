@@ -8,7 +8,7 @@ project(alpaca_trade_client
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(nlohmann_json CONFIG REQUIRED)
+find_package(Boost CONFIG REQUIRED COMPONENTS json)
 
 add_library(alpaca_trade_client STATIC
         src/alpaca_trade_client.cpp
@@ -16,7 +16,7 @@ add_library(alpaca_trade_client STATIC
 )
 target_include_directories(alpaca_trade_client PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/async_rest_client/include)
 target_link_libraries(alpaca_trade_client PUBLIC
-        nlohmann_json::nlohmann_json
+        Boost::json
         async_rest_client
 )
 

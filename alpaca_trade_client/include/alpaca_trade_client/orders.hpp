@@ -5,7 +5,7 @@
 #pragma once
 
 #include "position.hpp"
-#include <nlohmann/json.hpp>
+#include <boost/json.hpp>
 #include <optional>
 #include <string>
 #include <vector>
@@ -130,32 +130,32 @@ struct notional_order
     std::string client_order_id{};
 };
 
-void to_json(nlohmann::json& j, const order_side& side);
-void from_json(const nlohmann::json& j, order_side& side);
+void       tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const order_side& side);
+order_side tag_invoke(boost::json::value_to_tag<order_side>, const boost::json::value& jv);
 
-void to_json(nlohmann::json& j, const order_class& oc);
-void from_json(const nlohmann::json& j, order_class& oc);
+void        tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const order_class& oc);
+order_class tag_invoke(boost::json::value_to_tag<order_class>, const boost::json::value& jv);
 
-void to_json(nlohmann::json& j, const order_type& ot);
-void from_json(const nlohmann::json& j, order_type& ot);
+void       tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const order_type& ot);
+order_type tag_invoke(boost::json::value_to_tag<order_type>, const boost::json::value& jv);
 
-void to_json(nlohmann::json& j, const time_in_force& tif);
-void from_json(const nlohmann::json& j, time_in_force& tif);
+void          tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const time_in_force& tif);
+time_in_force tag_invoke(boost::json::value_to_tag<time_in_force>, const boost::json::value& jv);
 
-void to_json(nlohmann::json& j, const order_status& os);
-void from_json(const nlohmann::json& j, order_status& os);
+void         tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const order_status& os);
+order_status tag_invoke(boost::json::value_to_tag<order_status>, const boost::json::value& jv);
 
-void to_json(nlohmann::json& j, const position_intent& pi);
-void from_json(const nlohmann::json& j, position_intent& pi);
+void            tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const position_intent& pi);
+position_intent tag_invoke(boost::json::value_to_tag<position_intent>, const boost::json::value& jv);
 
-void from_json(const nlohmann::json& j, order& o);
-void to_json(nlohmann::json& j, const order& o);
+void  tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const order& o);
+order tag_invoke(boost::json::value_to_tag<order>, const boost::json::value& jv);
 
-void to_json(nlohmann::json& j, const notional_order& order);
-void from_json(const nlohmann::json& j, notional_order& order);
+void           tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const notional_order& order);
+notional_order tag_invoke(boost::json::value_to_tag<notional_order>, const boost::json::value& jv);
 
-void from_json(const nlohmann::json& j, position_closed& pc);
-void to_json(nlohmann::json& j, const position_closed& pc);
+void            tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const position_closed& pc);
+position_closed tag_invoke(boost::json::value_to_tag<position_closed>, const boost::json::value& jv);
 
-void from_json(const nlohmann::json& j, order_deleted& od);
-void to_json(nlohmann::json& j, const order_deleted& od);
+void          tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const order_deleted& od);
+order_deleted tag_invoke(boost::json::value_to_tag<order_deleted>, const boost::json::value& jv);
