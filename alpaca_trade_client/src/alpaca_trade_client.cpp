@@ -190,9 +190,15 @@ net::awaitable<std::expected<ReturnType, alpaca_api_error>> alpaca_trade_client:
         const ReturnType result     = json::value_to<ReturnType>(json_value);
         co_return result;
     }
-    catch (const std::exception& e)
+    catch (const boost::system::system_error& e)
     {
         const std::string error_msg = std::string(e.what()) + " | Response body: " + res.body();
+        co_return std::unexpected{alpaca_api_error{
+            alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), error_msg}};
+    }
+    catch (const std::exception& e)
+    {
+        const std::string error_msg = std::string("Unexpected error: ") + e.what() + " | Response body: " + res.body();
         co_return std::unexpected{alpaca_api_error{
             alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), error_msg}};
     }
