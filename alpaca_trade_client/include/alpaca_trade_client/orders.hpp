@@ -93,10 +93,10 @@ struct order
     std::optional<std::string>        qty{};
     std::string                       filled_qty{};
     std::optional<std::string>        filled_avg_price{};
-    order_class                       order_class{};
+    order_class                       order_class_type{};
     order_type                        type{};
     order_side                        side{};
-    time_in_force                     time_in_force{};
+    time_in_force                     time_in_force_type{};
     std::optional<std::string>        limit_price{};
     std::optional<std::string>        stop_price{};
     order_status                      status{};
@@ -112,7 +112,7 @@ struct position_closed
 {
     std::string symbol{};
     std::string status{};
-    order       order{};
+    order       order_details{};
 };
 
 struct order_deleted

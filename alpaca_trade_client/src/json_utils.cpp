@@ -407,7 +407,7 @@ void from_json(const nlohmann::json& j, position& pos)
     j.at("asset_id").get_to(pos.asset_id);
     j.at("symbol").get_to(pos.symbol);
     j.at("exchange").get_to(pos.exchange);
-    j.at("asset_class").get_to(pos.asset_class);
+    j.at("asset_class").get_to(pos.asset_class_type);
     j.at("avg_entry_price").get_to(pos.avg_entry_price);
     j.at("qty").get_to(pos.qty);
     j.at("side").get_to(pos.side);
@@ -432,7 +432,7 @@ void to_json(nlohmann::json& j, const position& pos)
         {"asset_id", pos.asset_id},
         {"symbol", pos.symbol},
         {"exchange", pos.exchange},
-        {"asset_class", pos.asset_class},
+        {"asset_class", pos.asset_class_type},
         {"avg_entry_price", pos.avg_entry_price},
         {"qty", pos.qty},
         {"side", pos.side},
@@ -737,10 +737,10 @@ void from_json(const nlohmann::json& j, order& o)
     j.at("symbol").get_to(o.symbol);
     j.at("asset_class").get_to(o.asset_class_type);
     j.at("filled_qty").get_to(o.filled_qty);
-    j.at("order_class").get_to(o.order_class);
+    j.at("order_class").get_to(o.order_class_type);
     j.at("order_type").get_to(o.type);
     j.at("side").get_to(o.side);
-    j.at("time_in_force").get_to(o.time_in_force);
+    j.at("time_in_force").get_to(o.time_in_force_type);
     j.at("status").get_to(o.status);
     j.at("extended_hours").get_to(o.extended_hours);
 
@@ -794,10 +794,10 @@ void to_json(nlohmann::json& j, const order& o)
         {"symbol", o.symbol},
         {"asset_class", o.asset_class_type},
         {"filled_qty", o.filled_qty},
-        {"order_class", o.order_class},
+        {"order_class", o.order_class_type},
         {"order_type", o.type},
         {"side", o.side},
-        {"time_in_force", o.time_in_force},
+        {"time_in_force", o.time_in_force_type},
         {"status", o.status},
         {"extended_hours", o.extended_hours}};
 
@@ -874,12 +874,12 @@ void from_json(const nlohmann::json& j, position_closed& pc)
 {
     j.at("symbol").get_to(pc.symbol);
     j.at("status").get_to(pc.status);
-    j.at("body").get_to(pc.order);
+    j.at("body").get_to(pc.order_details);
 }
 
 void to_json(nlohmann::json& j, const position_closed& pc)
 {
-    j = nlohmann::json{{"symbol", pc.symbol}, {"status", pc.status}, {"body", pc.order}};
+    j = nlohmann::json{{"symbol", pc.symbol}, {"status", pc.status}, {"body", pc.order_details}};
 }
 
 void from_json(const nlohmann::json& j, order_deleted& od)

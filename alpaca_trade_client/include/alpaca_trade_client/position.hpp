@@ -39,7 +39,7 @@ struct position
     std::string                asset_id{};
     std::string                symbol{};
     asset_exchange             exchange{};
-    asset_class                asset_class{};
+    asset_class                asset_class_type{};
     std::string                avg_entry_price{};
     std::string                qty{};
     std::optional<std::string> qty_available{};
