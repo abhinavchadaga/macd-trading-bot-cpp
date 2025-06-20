@@ -6,11 +6,13 @@
 #include "account.hpp"
 #include "async_rest_client/async_rest_client.hpp"
 #include "orders.hpp"
+#include "position.hpp"
 
 #include <boost/beast/http.hpp>
 #include <expected>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <vector>
 
 namespace net = boost::asio;
 
@@ -68,17 +70,16 @@ public:
     //
     // /positions
 
-    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> all_open_positions() const;
-    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>>
+    [[nodiscard]] net::awaitable<std::expected<std::vector<position>, alpaca_api_error>> all_open_positions() const;
+    [[nodiscard]] net::awaitable<std::expected<std::vector<position_closed>, alpaca_api_error>>
         close_all_positions(bool cancel_orders = true) const;
 
     //
     // /orders
 
-    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> get_all_orders() const;
-    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> delete_all_orders() const;
-    [[nodiscard]] net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>>
-        create_order(const notional_order& order) const;
+    [[nodiscard]] net::awaitable<std::expected<std::vector<order>, alpaca_api_error>>         get_all_orders() const;
+    [[nodiscard]] net::awaitable<std::expected<std::vector<order_deleted>, alpaca_api_error>> delete_all_orders() const;
+    [[nodiscard]] net::awaitable<std::expected<order, alpaca_api_error>> create_order(const notional_order& no) const;
 
 private:
     explicit alpaca_trade_client(net::io_context& ioc, config cfg);

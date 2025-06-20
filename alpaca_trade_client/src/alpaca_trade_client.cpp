@@ -92,7 +92,7 @@ net::awaitable<std::expected<trade_account, alpaca_api_error>> alpaca_trade_clie
             alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
     }
 }
-net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_trade_client::all_open_positions() const
+net::awaitable<std::expected<std::vector<position>, alpaca_api_error>> alpaca_trade_client::all_open_positions() const
 {
     auto [ec, res]{
         co_await _rest_client->request<http::verb::get>(_cfg.base_url() + "/positions", create_auth_headers())};
@@ -110,8 +110,9 @@ net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_t
 
     try
     {
-        const auto account_info{nlohmann::json::parse(res.body())};
-        co_return account_info;
+        const auto            positions_json{nlohmann::json::parse(res.body())};
+        std::vector<position> positions = positions_json;
+        co_return positions;
     }
     catch (const nlohmann::json::exception& e)
     {
@@ -119,7 +120,7 @@ net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_t
             alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
     }
 }
-net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>>
+net::awaitable<std::expected<std::vector<position_closed>, alpaca_api_error>>
     alpaca_trade_client::close_all_positions(const bool cancel_orders) const
 {
     const std::string url{_cfg.base_url() + "/positions?cancel_orders=" + (cancel_orders ? "true" : "false")};
@@ -138,8 +139,9 @@ net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>>
 
     try
     {
-        const auto account_info{nlohmann::json::parse(res.body())};
-        co_return account_info;
+        const auto                   close_results_json{nlohmann::json::parse(res.body())};
+        std::vector<position_closed> close_results = close_results_json;
+        co_return close_results;
     }
     catch (const nlohmann::json::exception& e)
     {
@@ -148,7 +150,7 @@ net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>>
     }
 }
 
-net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_trade_client::get_all_orders() const
+net::awaitable<std::expected<std::vector<order>, alpaca_api_error>> alpaca_trade_client::get_all_orders() const
 {
     auto [ec, res]{co_await _rest_client->request<http::verb::get>(_cfg.base_url() + "/orders", create_auth_headers())};
 
@@ -165,7 +167,8 @@ net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_t
 
     try
     {
-        const auto orders{nlohmann::json::parse(res.body())};
+        const auto         orders_json{nlohmann::json::parse(res.body())};
+        std::vector<order> orders = orders_json;
         co_return orders;
     }
     catch (const nlohmann::json::exception& e)
@@ -175,7 +178,8 @@ net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_t
     }
 }
 
-net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_trade_client::delete_all_orders() const
+net::awaitable<std::expected<std::vector<order_deleted>, alpaca_api_error>>
+    alpaca_trade_client::delete_all_orders() const
 {
     auto [ec, res]{
         co_await _rest_client->request<http::verb::delete_>(_cfg.base_url() + "/orders", create_auth_headers())};
@@ -193,7 +197,8 @@ net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_t
 
     try
     {
-        const auto cancellation_result{nlohmann::json::parse(res.body())};
+        const auto                 cancellation_result_json{nlohmann::json::parse(res.body())};
+        std::vector<order_deleted> cancellation_result = cancellation_result_json;
         co_return cancellation_result;
     }
     catch (const nlohmann::json::exception& e)
@@ -203,19 +208,15 @@ net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>> alpaca_t
     }
 }
 
-net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>>
-    alpaca_trade_client::create_order(const notional_order& order) const
+net::awaitable<std::expected<order, alpaca_api_error>> alpaca_trade_client::create_order(const notional_order& no) const
 {
-    const nlohmann::json order_json = order;
-
-    // Debug: print the JSON being sent
-    std::cout << "Sending JSON: " << order_json.dump(2) << std::endl;
+    const nlohmann::json no_json = no;
 
     auto headers = create_auth_headers();
     headers.set(http::field::content_type, "application/json");
 
     auto [ec, res]{
-        co_await _rest_client->request<http::verb::post>(_cfg.base_url() + "/orders", headers, order_json.dump())};
+        co_await _rest_client->request<http::verb::post>(_cfg.base_url() + "/orders", headers, no_json.dump())};
 
     if (ec)
     {
@@ -230,8 +231,9 @@ net::awaitable<std::expected<nlohmann::basic_json<>, alpaca_api_error>>
 
     try
     {
-        const auto order_response{nlohmann::json::parse(res.body())};
-        co_return order_response;
+        const auto  response_json{nlohmann::json::parse(res.body())};
+        const order order = response_json;
+        co_return order;
     }
     catch (const nlohmann::json::exception& e)
     {
