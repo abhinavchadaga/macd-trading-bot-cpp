@@ -2,7 +2,6 @@
 
 #include <chrono>
 #include <concepts>
-#include <cstddef>
 #include <string>
 
 struct OHLCV

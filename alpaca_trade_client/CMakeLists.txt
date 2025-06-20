@@ -20,12 +20,5 @@ target_link_libraries(alpaca_trade_client PUBLIC
         async_rest_client
 )
 
-add_executable(alpaca_trade_client_test src/alpaca_trade_client.cpp src/json_utils.cpp src/main.cpp)
-target_include_directories(alpaca_trade_client_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/async_rest_client/include)
-target_link_libraries(alpaca_trade_client_test PUBLIC
-        nlohmann_json::nlohmann_json
-        async_rest_client
-)
-
 enable_testing()
 add_subdirectory(tests)
