@@ -187,13 +187,16 @@ net::awaitable<std::expected<ReturnType, alpaca_api_error>> alpaca_trade_client:
 
     try
     {
-        const auto       response_json{nlohmann::json::parse(res.body())};
+        const auto&      body_str = res.body();
+        const auto       response_json{nlohmann::json::parse(body_str.begin(), body_str.end())};
         const ReturnType result = response_json;
         co_return result;
     }
     catch (const nlohmann::json::exception& e)
     {
-        co_return std::unexpected{
-            alpaca_api_error{alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), e.what()}};
+        // Include response body in error message for debugging
+        const std::string error_msg = std::string(e.what()) + " | Response body: " + res.body();
+        co_return std::unexpected{alpaca_api_error{
+            alpaca_api_error::error_type::json_parse_error, static_cast<int>(res.result()), error_msg}};
     }
 }
